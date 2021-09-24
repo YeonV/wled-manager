@@ -1,0 +1,12 @@
+appId: com.blade.wled.manager
+productName: WLED Manager
+copyright: Copyright © 2021 YeonV aka Blade
+directories:
+  output: dist
+  buildResources: resources
+files:
+  - from: .
+    filter:
+      - package.json
+      - app
+publish: null
