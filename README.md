@@ -1,5 +1,7 @@
 # WLED Manager
-![image](https://user-images.githubusercontent.com/28861537/134440042-26e3970c-54a2-4a18-85c1-ae819e5fb814.png)
+
+![WLED_Manager 1](https://user-images.githubusercontent.com/28861537/134611417-ecf80cd2-bc18-4d4f-8d93-d6908c5807fa.png)
+![WLED_Manager 2](https://user-images.githubusercontent.com/28861537/134611516-446d376c-bb94-4691-ad30-f12cc7e8a629.png)
 
 
 ## Usage
