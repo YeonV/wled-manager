@@ -40,3 +40,7 @@ $ yarn dev (or `npm run dev` or `pnpm run dev`)
 # production build
 $ yarn build (or `npm run build` or `pnpm run build`)
 ```
+
+## Special Thanks
+
+[![saltyshiomix](https://img.shields.io/badge/Github-saltyshiomix-blue.svg?logo=github&logoColor=white)](https://github.com/saltyshiomix) 
