@@ -44,14 +44,12 @@ export const MenuTools = {
 
 
 export const template = () => {
-    const { app, nativeImage } = require('electron')
     const isMac = process.platform === 'darwin'
-    const path = require('path');
 
     return ([
         // { role: 'appMenu' }
         ...(isMac ? [{
-            label: app.name,
+            label: "WLED Manager",
             submenu: [
                 { role: 'about' },
                 { type: 'separator' },

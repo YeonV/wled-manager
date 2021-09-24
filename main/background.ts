@@ -38,7 +38,8 @@ let tray = null;
 
   // tray = new Tray(nativeImage.createFromDataURL('data:image/x-icon;base64,AAABAAEAEBAAAAEAGACGAAAAFgAAAIlQTkcNChoKAAAADUlIRFIAAAAQAAAAEAgGAAAAH/P/YQAAAE1JREFUOI1j/P//PwOxgNGeAUMxE9G6cQCKDWAhpADZ2f8PMjBS3QW08QK20KaZC2gfC9hCnqouoNgARgY7zMxAyNlUdQHlXiAlO2MDAD63EVqNHAe0AAAAAElFTkSuQmCC'))
   
-  const icon = nativeImage.createFromPath(path.join(__dirname, 'images/logo256.png'))
+ 
+  const icon = nativeImage.createFromPath(path.join(__dirname, 'images/logo32.png')).resize({width: 16, height: 16})
   // const icon = isProd ? nativeImage.createFromPath('./images/logo256.png') : path.join(__dirname, 'images/logo256.png')
   tray = new Tray(icon)
 
