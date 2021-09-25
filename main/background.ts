@@ -28,7 +28,8 @@ let tray = null;
     height: 800,
     titleBarStyle: "hidden", // <-- add this line if needed
     webPreferences: {
-      enableRemoteModule: true // <-- add this line
+      enableRemoteModule: true, // <-- add this line
+      webSecurity: false
     },
   });
 

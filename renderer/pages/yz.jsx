@@ -6,7 +6,7 @@ import { useRouter } from 'next/router';
 import { ipcRenderer } from 'electron';
 import { ChevronLeft, ChevronRight } from '@material-ui/icons';
 import { Drawer, List, Divider, Card, Typography, Button } from '@material-ui/core';
-import useLeftBarStyles from '../styles/LeftBar.styles';
+import useLeftBarStyles from '../styles/yz.styles';
 import { template } from '../components/MenuTemplate';
 
 const LeftBar = () => {

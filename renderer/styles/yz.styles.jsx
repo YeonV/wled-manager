@@ -76,6 +76,7 @@ const useLeftBarStyles = makeStyles((theme) => ({
         width: 42,
         height: 42,
         border: '1px solid rgba(255, 255, 255, 0.12)',
+        borderLeft: 0,
         display: 'flex'
     },
     contentShift: {

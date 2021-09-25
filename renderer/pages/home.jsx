@@ -92,7 +92,7 @@ function Home() {
 
   useEffect(() => {
     bonjour = require('bonjour')()
-    bonjour.find({ type: 'http' }, (service) => {
+    bonjour.find({ type: 'wled' }, (service) => {
       if (service.referer && service.referer.address) {
         bonjour.destroy()
         setIp(service.referer.address)
