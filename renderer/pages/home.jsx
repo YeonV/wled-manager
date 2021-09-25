@@ -1,15 +1,9 @@
 import React, { useEffect } from 'react';
 import Head from 'next/head';
 import { ipcRenderer } from 'electron';
-import { Theme, makeStyles, createStyles, styled } from '@material-ui/core/styles';
-import Button from '@material-ui/core/Button';
-import { Check, Error, HourglassEmpty, PlayArrow, Save } from '@material-ui/icons';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
-import DialogActions from '@material-ui/core/DialogActions';
+import { makeStyles, createStyles, styled } from '@material-ui/core/styles';
+import { Check, Error, HourglassEmpty, PlayArrow } from '@material-ui/icons';
 import Typography from '@material-ui/core/Typography';
-import Link from '../components/Link';
 
 import { Box, CircularProgress, Fab, TextField } from '@material-ui/core';
 import { useRouter } from 'next/router';
@@ -17,19 +11,15 @@ import { useRouter } from 'next/router';
 const CssTextField = styled(TextField, {
   shouldForwardProp: (props) => props !== "focuscolor"
 })((p) => ({
-  // input label when focused
   "& label.Mui-focused": {
     color: p.focuscolor
   },
-  // focused color for input with variant='standard'
   "& .MuiInput-underline:after": {
     borderBottomColor: p.focuscolor
   },
-  // focused color for input with variant='filled'
   "& .MuiFilledInput-underline:after": {
     borderBottomColor: p.focuscolor
   },
-  // focused color for input with variant='outlined'
   "& .MuiOutlinedInput-root": {
     "&.Mui-focused fieldset": {
       borderColor: p.focuscolor
@@ -41,12 +31,12 @@ const useStyles = makeStyles((theme) =>
   createStyles({
     root: {
       textAlign: 'center',
-      paddingTop: theme.spacing(4),
+      paddingTop: 0,
       backgroundColor: '#222',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'space-around',
+      justifyContent: 'space-between',
       '& img': {
         width: 256
       }
@@ -65,18 +55,23 @@ function Home() {
   const [error, setError] = React.useState(false);
   const [noBar, setNoBar] = React.useState(true);
 
-
-  const handleButtonClick = (newIp) => {
+  const handleButtonClick = (newIp, zeroconf) => {    
     setSuccess(false)
     setError(false)
     setLoading(true)
-    fetch(`http://${newIp || ip}/json/info`)
+    fetch(`http://${newIp}/json/info`)
       .then(r => r.json())
       .then((res) => {
         if (res.name) {
           setSuccess(true)
-          window && window.localStorage.setItem("wled-manager-ip", newIp || ip)
-          router.push(`/yz?ip=${newIp || ip}`)
+          window && window.localStorage.setItem("wled-manager-ip", newIp)
+          if (zeroconf) {
+            window && window.localStorage.setItem("wled-manager-zeroconf", zeroconf)
+          }
+          setTimeout(()=>{
+            router.push(`/yz?ip=${newIp}${zeroconf && '&zeroconf=true' || ''}`)
+          }, 1000)
+          
         }
       }).catch((error) => {
         setLoading(false)
@@ -87,21 +82,35 @@ function Home() {
 
   useEffect(() => {
     ipcRenderer.send('resize-me-please', [480, 800])
-    if (window && window.localStorage.getItem("wled-manager-ip")) {
-      setIp(window.localStorage.getItem("wled-manager-ip"))
-      handleButtonClick(window.localStorage.getItem("wled-manager-ip"))
-    }
-    if (document && document.querySelectorAll('.titlebar').length > 0) {
-      setNoBar(false)
+    // if (window && window.localStorage.getItem("wled-manager-ip")) {
+    //   setIp(window.localStorage.getItem("wled-manager-ip"))
+    //   handleButtonClick(window.localStorage.getItem("wled-manager-ip"))
+    // }
+  }, [])
+
+  let bonjour = null;
+
+  useEffect(() => {
+    bonjour = require('bonjour')()
+    bonjour.find({ type: 'http' }, (service) => {
+      if (service.referer && service.referer.address) {
+        bonjour.destroy()
+        setIp(service.referer.address)
+        handleButtonClick(service.referer.address, true)
+      }
+    })
+    return () => {
+      bonjour.destroy()
     }
   }, [])
+
   return (
     <React.Fragment>
       <Head>
         <title>Home</title>
       </Head>
-      <div style={{ height: noBar ? '100vh' : 'calc(100vh - 30px)' }} className={classes.root}>
-        <div></div>
+      <div style={{ height: '100vh' }} className={classes.root}>
+        <div style={{ height: '30px', width: '100vw', WebkitAppRegion: 'drag' }}></div>
         <div>
 
           {success ? <img src="/images/green.png" /> : error ? <img src="/images/red.png" /> : loading ? <img src="/images/orange.png" /> : <img src="/images/blue.png" />}
@@ -109,20 +118,15 @@ function Home() {
             WLED Manager
           </Typography>
           <div style={{ display: 'flex', marginTop: '2rem' }}>
-
             <CssTextField onKeyPress={(ev) => {
               if (ev.key === 'Enter') {
                 // Do code here
                 ev.preventDefault();
-                handleButtonClick()
+                handleButtonClick(ip)
               }
-            }} focused focuscolor={success ? '#00a32e' : error ? '#e40303' : loading ? '#ffaa00' : '#004dff'} id="ip" label="WLED IP" style={{ width: 256 }} variant="outlined" value={ip} onChange={(e) => setIp(e.target.value)} />
-
-
+              }} focused focuscolor={success ? '#00a32e' : error ? '#e40303' : loading ? '#ffaa00' : '#004dff'} id="ip" label="WLED IP" style={{ width: 256 }} variant="outlined" value={ip} onChange={(e) => setIp(e.target.value)} />
           </div>
-
-
-        </div>
+        </div>        
         <Box sx={{ m: 1, position: 'relative' }}>
           <Fab
             color="primary"
@@ -144,7 +148,7 @@ function Home() {
                 },
               })
             }}
-            onClick={() => handleButtonClick()}
+            onClick={() => handleButtonClick(ip)}
           >
             {success ? <Check /> : error ? <Error /> : loading ? <HourglassEmpty /> : <PlayArrow />}
           </Fab>

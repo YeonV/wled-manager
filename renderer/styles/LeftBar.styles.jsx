@@ -64,6 +64,20 @@ const useLeftBarStyles = makeStyles((theme) => ({
             padding: '8px',
         },
     },
+    menuButton: {
+        transition: theme.transitions.create('margin', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.leavingScreen,
+        }),
+        marginLeft: drawerWidth,
+        position: 'absolute',
+        top: 69,
+        left: 0,
+        width: 42,
+        height: 42,
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        display: 'flex'
+    },
     contentShift: {
         transition: theme.transitions.create('margin', {
             easing: theme.transitions.easing.easeOut,
