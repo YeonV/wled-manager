@@ -1,6 +1,8 @@
 import { makeStyles } from '@material-ui/core/styles';
 
 const drawerWidth = 240
+const drawerBottomHeight = 300
+const drawerBottomHeightExtra = 'calc(100vh - 450px)'
 
 const useLeftBarStyles = makeStyles((theme) => ({
     '@global': {
@@ -21,6 +23,24 @@ const useLeftBarStyles = makeStyles((theme) => ({
             display: 'none',
         },
     },
+    noselect: {
+        WebkitTouchCallout: 'none', /* iOS Safari */
+          WebkitUserSelect: 'none', /* Safari */
+           KhtmlUserSelect: 'none', /* Konqueror HTML */
+             MozUserSelect: 'none', /* Firefox */
+              MsUserSelect: 'none', /* Internet Explorer/Edge */
+                  userSelect: 'none', /* Non-prefixed version, currently
+                                        supported by Chrome and Opera */
+      },
+    drawerBottom: {
+        flexShrink: 0,
+        backgroundColor: '#111',
+    },
+    drawerBottomPaper: {
+        height: drawerBottomHeight,
+        overflow: 'hidden',
+        backgroundColor: '#111',        
+    },
     drawer: {
         width: drawerWidth,
         flexShrink: 0,
@@ -30,12 +50,13 @@ const useLeftBarStyles = makeStyles((theme) => ({
         width: drawerWidth,
         overflowX: 'hidden',
         backgroundColor: '#111',
+        paddingBottom: drawerBottomHeight,
     },
     drawerHeader: {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: theme.spacing(0, 1),
+        padding: 0,
         paddingTop: '30px',
         height: '99px',
         ...theme.mixins.toolbar,
@@ -64,6 +85,16 @@ const useLeftBarStyles = makeStyles((theme) => ({
             padding: '8px',
         },
     },
+    contentBottom: {
+        flexGrow: 1,
+        background: 'transparent',
+        padding: 0,
+        transition: theme.transitions.create('padding', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.leavingScreen,
+        }),
+        paddingBottom: drawerBottomHeight,
+    },
     menuButton: {
         transition: theme.transitions.create('margin', {
             easing: theme.transitions.easing.sharp,
@@ -85,6 +116,13 @@ const useLeftBarStyles = makeStyles((theme) => ({
             duration: theme.transitions.duration.enteringScreen,
         }),
         marginLeft: 0,
+    },
+    contentBottomShift: {
+        transition: theme.transitions.create('padding', {
+            easing: theme.transitions.easing.easeOut,
+            duration: theme.transitions.duration.enteringScreen,
+        }),
+        paddingBottom: 0,
     },
 }));
 

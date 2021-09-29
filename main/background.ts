@@ -6,9 +6,11 @@ import { app,
  } from 'electron';
 import serve from 'electron-serve';
 import { createWindow } from './helpers';
+import {DgramAsPromised} from "dgram-as-promised"
 
 const path = require('path');
 const isProd: boolean = process.env.NODE_ENV === 'production';
+
 
 if (isProd) {
   serve({ directory: 'app' });
@@ -35,6 +37,13 @@ let tray = null;
 
   ipcMain.on('resize-me-please', (event, arg) => {
     mainWindow.setSize(arg[0],arg[1])
+  })
+
+  ipcMain.on('UDP', async(event, arg) => {    
+    const socket = DgramAsPromised.createSocket("udp4")    
+    const PORT = 21324    
+    const message = Buffer.from(arg[1])
+    await socket.send(message, 0, message.length, PORT, arg[0].ip)
   })
 
   // tray = new Tray(nativeImage.createFromDataURL('data:image/x-icon;base64,AAABAAEAEBAAAAEAGACGAAAAFgAAAIlQTkcNChoKAAAADUlIRFIAAAAQAAAAEAgGAAAAH/P/YQAAAE1JREFUOI1j/P//PwOxgNGeAUMxE9G6cQCKDWAhpADZ2f8PMjBS3QW08QK20KaZC2gfC9hCnqouoNgARgY7zMxAyNlUdQHlXiAlO2MDAD63EVqNHAe0AAAAAElFTkSuQmCC'))
