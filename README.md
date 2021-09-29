@@ -9,9 +9,27 @@
 
 ---
 
-## Usage
+## Introducing WebAudio in v0.0.3 (proof of concept)
 
-### Create an App
+<img src="https://user-images.githubusercontent.com/28861537/135351170-e7f6f1be-7af6-4183-aee0-10a205255fcc.png" width="300" />
+
+<a href="https://user-images.githubusercontent.com/28861537/135351030-af2c4408-7bb8-4ad4-9bf0-e13e04f8122a.mp4" target="_blank">
+  Open Video
+</a>
+
+## Attention
+
+All this is still pre-alpha-state. If you want to test it, make sure you set `IP`, `PixelCount`, `Color` and `Frequency-Band (one of the equalizer's bars)` **!before!** you click play. Also stopping and replaying is currently resulting in multiple Senders.
+When it hangs, just restart the app.
+
+Everything is done without a state-management-lib.
+After I choose one, `IP` and `PixelCount` can be retrieved automatically.
+
+## Development
+
+<details><summary>Click to expand</summary>
+
+  ### Create an App
 
 ```
 # with npx
@@ -45,7 +63,10 @@ $ yarn dev (or `npm run dev` or `pnpm run dev`)
 # production build
 $ yarn build (or `npm run build` or `pnpm run build`)
 ```
+   
+</details>
 
 ## Special Thanks
 
-[![saltyshiomix](https://img.shields.io/badge/Github-saltyshiomix-blue.svg?logo=github&logoColor=white)](https://github.com/saltyshiomix) 
+[![saltyshiomix](https://img.shields.io/badge/Nextron-saltyshiomix-blue.svg?logo=github&logoColor=white)](https://github.com/saltyshiomix/nextron) 
+[![wled-github](https://img.shields.io/badge/WLED-Aircookie-blue.svg?logo=github&logoColor=white)](https://github.com/Aircoookie/WLED)
