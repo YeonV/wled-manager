@@ -40,7 +40,6 @@ const useStyles = makeStyles(theme => ({
         top: 0,
         height: '255px',
         zIndex: -1,
-        // backgroundColor: '#000',
         padding: 'calc(100vw / 160)',
         flexShrink: 1,
         margin: 'calc(100vw / 500)',
@@ -110,7 +109,6 @@ export default function VisualDemo({
                         .fill([color.r, color.g, color.b])
                         .fill([bgColor.r, bgColor.g, bgColor.b], parseInt( device.pixel_count * ratio)) 
                         .flat()
-
                     ipcRenderer.send('UDP', [{ ip: device.ip }, [...ledDataPrefix, ...ledData]])
                 }
             }
@@ -142,7 +140,6 @@ export default function VisualDemo({
             }
             stop()
         }, 200);
-
     }
 
     function handleFreqBandClick(num) {

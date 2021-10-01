@@ -62,29 +62,32 @@ const LeftBar = () => {
 
   useEffect(() => {
     if (!isZeroConf) {
-      device && setCombNodes([...devices, {
-        "name": device.name,
-        "type": device.arch === "esp8266" ? 82 : 32,
-        "ip": iframe,
-        "vid": device.vid
-      }])
-      device && setDevices([...devices, {
-        "name": device.name,
-        "type": device.arch === "esp8266" ? 82 : 32,
-        "ip": iframe,
-        "vid": device.vid
-      }])
+      if ((combNodes.filter(n => n.ip === iframe).length > 0) || (devices.filter(n => n.ip === iframe).length)) {
+        console.log(service.name, " already exsists")
+      } else {
+        device && setCombNodes([...devices, {
+          "name": device.name,
+          "type": device.arch === "esp8266" ? 82 : 32,
+          "ip": iframe,
+          "vid": device.vid
+        }])
+        device && setDevices([...devices, {
+          "name": device.name,
+          "type": device.arch === "esp8266" ? 82 : 32,
+          "ip": iframe,
+          "vid": device.vid
+        }])
+      }
     }
   }, [devices, device])
 
-  
   let bonjour = null;
   useEffect(() => {
     if (isZeroConf) {
       bonjour = require('bonjour')()
       bonjour.find({ type: 'wled' }, async (service) => {
         if (service.referer && service.referer.address) {
-          if (combNodes.filter(n => n.ip === service.referer.address).length > 0) {
+          if ((combNodes.filter(n => n.ip === service.referer.address).length > 0) || (devices.filter(n => n.ip === service.referer.address).length)) {
             console.log(service.name, " already exsists")
           } else {
             console.log("wled found:", service.name)
@@ -115,13 +118,15 @@ const LeftBar = () => {
         .then((res) => setDevices(res.nodes));
       fetch(`http://${iframe}/json/info`)
         .then(r => r.json())
-        .then((re) => { setDevice({
-          "name": re.name,
-          "type": re.arch === "esp8266" ? 82 : 32,
-          "ip": iframe,
-          "vid": re.vid,
-          "pixel_count": re.leds.count
-        }) }).catch((error) => console.log("YZ-ERROR", error));
+        .then((re) => {
+          setDevice({
+            "name": re.name,
+            "type": re.arch === "esp8266" ? 82 : 32,
+            "ip": iframe,
+            "vid": re.vid,
+            "pixel_count": re.leds.count
+          })
+        }).catch((error) => console.log("YZ-ERROR", error));
       if (router.query && router.query.ip) {
         setIframe(router.query.ip)
       }
@@ -133,8 +138,6 @@ const LeftBar = () => {
       }
     }
   }, [])
-
-  // console.log("audioDevice:", audioDevice)
 
   return (<>
     <Head>
@@ -166,7 +169,7 @@ const LeftBar = () => {
         {combNodes.length > 0 && combNodes.map((d, i) => (
 
           <Card key={i} onClick={() => {
-            setIframe(combNodes[i].ip)            
+            setIframe(combNodes[i].ip)
             setDevice(combNodes[i])
           }} style={{ cursor: 'pointer', margin: '0.5rem', padding: '0.5rem 0.25rem 0.5rem 0.5rem', background: combNodes[i].ip === iframe ? '#404040' : '#202020' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -242,11 +245,9 @@ const LeftBar = () => {
       open={bottomBarOpen}
       classes={{ paper: classes.drawerBottomPaper }}
     >
-      {/* <div style={{ height: 'calc(100vh - 355px)'}}>
-    </div> */}
       <AudioDataContainer audioDeviceId={audioDevice} />
-
     </Drawer>
+
     <main className={clsx(classes.content, classes.contentBottom, { [classes.contentShift]: !leftBarOpen }, { [classes.contentBottomShift]: !bottomBarOpen })}>
       <div className={clsx(classes.menuButton, { [classes.contentShift]: !leftBarOpen }, { [classes.contentBottomShift]: !leftBarOpen })}>
         <Button onClick={() => setLeftBarOpen(!leftBarOpen)} style={{ flex: 1, minWidth: 'unset' }}>

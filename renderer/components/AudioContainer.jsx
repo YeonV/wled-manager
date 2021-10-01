@@ -1,11 +1,5 @@
 import React from 'react';
 import VisualDemo from './Visualizer';
-import { Button } from '@material-ui/core';
-
-// var theStream
-var theSource
-var theAnalyser
-// var audioContext
 
 class AudioDataContainer extends React.Component {
 
@@ -16,25 +10,18 @@ class AudioDataContainer extends React.Component {
     }
 
     audioContext = new AudioContext();
-    // audioContext = null
     theGain = null
     theStream = null
 
     initializeAudioAnalyser = () => {
-
-        // this.audioContext = new AudioContext();
         this.getMedia(this.props.audioDeviceId).then(stream => {
-
             this.theStream = stream
             if (!this.audioContext || this.audioContext.state === 'closed') {
                 return
             }
             const source = this.audioContext.createMediaStreamSource(stream);
-            theSource = source
             const analyser = this.audioContext.createAnalyser();
-            theAnalyser = analyser
             analyser.fftSize = 4096;
-            // source.connect(audioContext.destination);
             const gain = this.audioContext.createGain()
             this.theGain = gain.gain
             source.connect(gain)
@@ -52,9 +39,10 @@ class AudioDataContainer extends React.Component {
         styleAdjuster(amplitudeArray)
     }
     getMedia = async (clientDevice) => {
-        
         const ad = await navigator.mediaDevices.enumerateDevices()
-            .then((devices) => !!(clientDevice !== null && devices.find(d => d.deviceId === clientDevice)) ? clientDevice : null)
+            .then((devices) => !!(clientDevice !== null && devices.find(d => d.deviceId === clientDevice))
+                ? clientDevice
+                : null)
         if (ad) {
             try {
                 return await navigator.mediaDevices.getUserMedia({

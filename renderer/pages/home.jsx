@@ -57,7 +57,6 @@ function Home() {
   const [loading, setLoading] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
   const [error, setError] = React.useState(false);
-  const [noBar, setNoBar] = React.useState(true);
 
   const handleButtonClick = (newIp, zeroconf) => {    
     setSuccess(false)
@@ -94,10 +93,6 @@ function Home() {
 
   useEffect(() => {
     ipcRenderer.send('resize-me-please', [480, 800])
-    // if (window && window.localStorage.getItem("wled-manager-ip")) {
-    //   setIframe(window.localStorage.getItem("wled-manager-ip"))
-    //   handleButtonClick(window.localStorage.getItem("wled-manager-ip"))
-    // }
   }, [])
 
   let bonjour = null;
@@ -124,7 +119,6 @@ function Home() {
       <div style={{ height: '100vh' }} className={classes.root}>
         <div style={{ height: '30px', width: '100vw', WebkitAppRegion: 'drag' }}></div>
         <div>
-
           {success ? <img src="/images/green.png" /> : error ? <img src="/images/red.png" /> : loading ? <img src="/images/orange.png" /> : <img src="/images/blue.png" />}
           <Typography variant="h4" style={{ color: "#444" }} onClick={() => window.location.reload()}>
             WLED Manager
