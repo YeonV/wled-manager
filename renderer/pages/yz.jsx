@@ -9,6 +9,7 @@ import { Drawer, List, Divider, Card, Typography, Button } from '@material-ui/co
 import useLeftBarStyles from '../styles/yz.styles';
 import { template } from '../components/MenuTemplate';
 import AudioDataContainer from '../components/AudioContainer';
+import useStore from '../store/store';
 
 const LeftBar = () => {
   if (typeof window === 'undefined') {
@@ -16,13 +17,21 @@ const LeftBar = () => {
   }
 
   const classes = useLeftBarStyles();
-  const [drawerOpen, setDrawerOpen] = useState(true)
-  const [drawerBottomOpen, setDrawerBottomOpen] = useState(false)
   const router = useRouter()
-  const [iframe, setIframe] = useState(router.query.ip || (typeof window !== 'undefined' && window.localStorage.getItem("wled-manager-ip")) || '')
+
+  const leftBarOpen = useStore(state => state.leftBarOpen)
+  const setLeftBarOpen = useStore(state => state.setLeftBarOpen)
+  const bottomBarOpen = useStore(state => state.bottomBarOpen)
+  const setBottomBarOpen = useStore(state => state.setBottomBarOpen)
+  const iframe = useStore(state => state.iframe)
+  const setIframe = useStore(state => state.setIframe)
+  const devices = useStore(state => state.devices)
+  const setDevices = useStore(state => state.setDevices)
+  const device = useStore(state => state.device)
+  const setDevice = useStore(state => state.setDevice)
+  const audioDevice = useStore(state => state.audioDevice)
+
   const [combNodes, setCombNodes] = useState([])
-  const [nodes, setNodes] = useState([])
-  const [node, setNode] = useState('')
   const [isZeroConf, setIsZeroConf] = useState(router.query.zeroconf || (typeof window !== 'undefined' && window.localStorage.getItem("wled-manager-zeroconf") === 'true') || false)
 
   useEffect(() => {
@@ -53,15 +62,22 @@ const LeftBar = () => {
 
   useEffect(() => {
     if (!isZeroConf) {
-      node && setCombNodes([...nodes, {
-        "name": node.name,
-        "type": node.arch === "esp8266" ? 82 : 32,
+      device && setCombNodes([...devices, {
+        "name": device.name,
+        "type": device.arch === "esp8266" ? 82 : 32,
         "ip": iframe,
-        "vid": node.vid
+        "vid": device.vid
+      }])
+      device && setDevices([...devices, {
+        "name": device.name,
+        "type": device.arch === "esp8266" ? 82 : 32,
+        "ip": iframe,
+        "vid": device.vid
       }])
     }
-  }, [nodes, node])
+  }, [devices, device])
 
+  
   let bonjour = null;
   useEffect(() => {
     if (isZeroConf) {
@@ -75,7 +91,14 @@ const LeftBar = () => {
             await fetch(`http://${service.referer.address}/json/info`)
               .then(r => r.json())
               .then((re) => {
-                setCombNodes((nodes) => [...nodes, {
+                setCombNodes((devices) => [...devices, {
+                  "name": service.name,
+                  "type": re.arch === "esp8266" ? 82 : 32,
+                  "ip": service.referer.address,
+                  "vid": re.vid,
+                  "pixel_count": re.leds.count
+                }])
+                setDevices([...devices, {
                   "name": service.name,
                   "type": re.arch === "esp8266" ? 82 : 32,
                   "ip": service.referer.address,
@@ -89,10 +112,16 @@ const LeftBar = () => {
     } else {
       fetch(`http://${iframe}/json/nodes`)
         .then(r => r.json())
-        .then((res) => setNodes(res.nodes));
+        .then((res) => setDevices(res.nodes));
       fetch(`http://${iframe}/json/info`)
         .then(r => r.json())
-        .then((re) => { setNode(re) }).catch((error) => console.log("YZ-ERROR", error));
+        .then((re) => { setDevice({
+          "name": re.name,
+          "type": re.arch === "esp8266" ? 82 : 32,
+          "ip": iframe,
+          "vid": re.vid,
+          "pixel_count": re.leds.count
+        }) }).catch((error) => console.log("YZ-ERROR", error));
       if (router.query && router.query.ip) {
         setIframe(router.query.ip)
       }
@@ -105,6 +134,8 @@ const LeftBar = () => {
     }
   }, [])
 
+  // console.log("audioDevice:", audioDevice)
+
   return (<>
     <Head>
       <title>WLED Manager - by Blade</title>
@@ -114,8 +145,8 @@ const LeftBar = () => {
       className={classes.drawer}
       variant="persistent"
       anchor="left"
-      open={drawerOpen}
-      classes={{ paper: clsx(classes.drawerPaper, classes.noselect, { [classes.contentBottomShift]: !drawerBottomOpen }) }}
+      open={leftBarOpen}
+      classes={{ paper: clsx(classes.drawerPaper, classes.noselect, { [classes.contentBottomShift]: !bottomBarOpen }) }}
     >
       <div className={classes.drawerHeader}>
         <div style={{ paddingLeft: '16px' }}>
@@ -135,7 +166,8 @@ const LeftBar = () => {
         {combNodes.length > 0 && combNodes.map((d, i) => (
 
           <Card key={i} onClick={() => {
-            setIframe(combNodes[i].ip)
+            setIframe(combNodes[i].ip)            
+            setDevice(combNodes[i])
           }} style={{ cursor: 'pointer', margin: '0.5rem', padding: '0.5rem 0.25rem 0.5rem 0.5rem', background: combNodes[i].ip === iframe ? '#404040' : '#202020' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography style={{ color: "#fff", fontSize: '1rem', maxWidth: 150, overflowX: 'hidden', whiteSpace: 'nowrap' }}>
@@ -181,7 +213,7 @@ const LeftBar = () => {
         </Card>
       </List>
       <Divider />
-      <Button endIcon={drawerBottomOpen ? <ArrowDownward /> : <ArrowUpward />} startIcon={<Equalizer/>} onClick={() => setDrawerBottomOpen(!drawerBottomOpen)} style={{ lineHeight: '17px'}}>
+      <Button endIcon={bottomBarOpen ? <ArrowDownward /> : <ArrowUpward />} startIcon={<Equalizer />} onClick={() => setBottomBarOpen(!bottomBarOpen)} style={{ lineHeight: '17px' }}>
         WebAudio
       </Button>
       <Divider />
@@ -207,18 +239,18 @@ const LeftBar = () => {
       className={classes.drawerBottom}
       variant="persistent"
       anchor="bottom"
-      open={drawerBottomOpen}
+      open={bottomBarOpen}
       classes={{ paper: classes.drawerBottomPaper }}
-    > 
-    {/* <div style={{ height: 'calc(100vh - 355px)'}}>
+    >
+      {/* <div style={{ height: 'calc(100vh - 355px)'}}>
     </div> */}
-      <AudioDataContainer />
-      
+      <AudioDataContainer audioDeviceId={audioDevice} />
+
     </Drawer>
-    <main className={clsx(classes.content, classes.contentBottom, { [classes.contentShift]: !drawerOpen }, { [classes.contentBottomShift]: !drawerBottomOpen })}>
-      <div className={clsx(classes.menuButton, { [classes.contentShift]: !drawerOpen }, { [classes.contentBottomShift]: !drawerOpen })}>
-        <Button onClick={() => setDrawerOpen(!drawerOpen)} style={{ flex: 1, minWidth: 'unset' }}>
-          {drawerOpen ? <ChevronLeft /> : <ChevronRight />}
+    <main className={clsx(classes.content, classes.contentBottom, { [classes.contentShift]: !leftBarOpen }, { [classes.contentBottomShift]: !bottomBarOpen })}>
+      <div className={clsx(classes.menuButton, { [classes.contentShift]: !leftBarOpen }, { [classes.contentBottomShift]: !leftBarOpen })}>
+        <Button onClick={() => setLeftBarOpen(!leftBarOpen)} style={{ flex: 1, minWidth: 'unset' }}>
+          {leftBarOpen ? <ChevronLeft /> : <ChevronRight />}
         </Button>
       </div>
       <iframe src={`http://${iframe}/`} width="100%" height="100%" style={{ border: 0 }} />

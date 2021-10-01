@@ -7,6 +7,7 @@ import Typography from '@material-ui/core/Typography';
 
 import { Box, CircularProgress, Fab, TextField } from '@material-ui/core';
 import { useRouter } from 'next/router';
+import useStore from '../store/store';
 
 const CssTextField = styled(TextField, {
   shouldForwardProp: (props) => props !== "focuscolor"
@@ -49,7 +50,10 @@ function Home() {
   const classes = useStyles({});
   const router = useRouter();
 
-  const [ip, setIp] = React.useState('');
+  const iframe = useStore(state => state.iframe)
+  const setIframe = useStore(state => state.setIframe)
+  const setDevice = useStore(state => state.setDevice)
+
   const [loading, setLoading] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
   const [error, setError] = React.useState(false);
@@ -65,8 +69,16 @@ function Home() {
         if (res.name) {
           setSuccess(true)
           window && window.localStorage.setItem("wled-manager-ip", newIp)
+
           if (zeroconf) {
             window && window.localStorage.setItem("wled-manager-zeroconf", zeroconf)
+            setDevice({
+              "name": res.name,
+              "type": res.arch === "esp8266" ? 82 : 32,
+              "ip": newIp,
+              "vid": res.vid,
+              "pixel_count": res.leds.count
+            })
           }
           setTimeout(()=>{
             router.push(`/yz?ip=${newIp}${zeroconf && '&zeroconf=true' || ''}`)
@@ -83,7 +95,7 @@ function Home() {
   useEffect(() => {
     ipcRenderer.send('resize-me-please', [480, 800])
     // if (window && window.localStorage.getItem("wled-manager-ip")) {
-    //   setIp(window.localStorage.getItem("wled-manager-ip"))
+    //   setIframe(window.localStorage.getItem("wled-manager-ip"))
     //   handleButtonClick(window.localStorage.getItem("wled-manager-ip"))
     // }
   }, [])
@@ -95,7 +107,7 @@ function Home() {
     bonjour.find({ type: 'wled' }, (service) => {
       if (service.referer && service.referer.address) {
         bonjour.destroy()
-        setIp(service.referer.address)
+        setIframe(service.referer.address)
         handleButtonClick(service.referer.address, true)
       }
     })
@@ -122,9 +134,9 @@ function Home() {
               if (ev.key === 'Enter') {
                 // Do code here
                 ev.preventDefault();
-                handleButtonClick(ip)
+                handleButtonClick(iframe)
               }
-              }} focused focuscolor={success ? '#00a32e' : error ? '#e40303' : loading ? '#ffaa00' : '#004dff'} id="ip" label="WLED IP" style={{ width: 256 }} variant="outlined" value={ip} onChange={(e) => setIp(e.target.value)} />
+              }} focused focuscolor={success ? '#00a32e' : error ? '#e40303' : loading ? '#ffaa00' : '#004dff'} id="ip" label="WLED IP" style={{ width: 256 }} variant="outlined" value={iframe} onChange={(e) => setIframe(e.target.value)} />
           </div>
         </div>        
         <Box sx={{ m: 1, position: 'relative' }}>
@@ -148,7 +160,7 @@ function Home() {
                 },
               })
             }}
-            onClick={() => handleButtonClick(ip)}
+            onClick={() => handleButtonClick(iframe)}
           >
             {success ? <Check /> : error ? <Error /> : loading ? <HourglassEmpty /> : <PlayArrow />}
           </Fab>

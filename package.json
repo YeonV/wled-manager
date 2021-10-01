@@ -2,7 +2,7 @@
   "private": true,
   "name": "wled-manager",
   "description": "WLED Manager by Blade",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "author": "YeonV aka Blade <https://github.com/YeonV>",
   "main": "app/background.js",
   "scripts": {
@@ -17,7 +17,8 @@
     "dgram-as-promised": "^5.0.1",
     "electron-serve": "^1.1.0",
     "electron-store": "^8.0.0",
-    "react-colorful": "^5.5.0"
+    "react-colorful": "^5.5.0",
+    "zustand": "^3.5.11"
   },
   "devDependencies": {
     "@material-ui/core": "^4.12.2",
