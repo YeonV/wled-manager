@@ -4,8 +4,8 @@ import clsx from 'clsx';
 import { remote } from 'electron';
 import { useRouter } from 'next/router';
 import { ipcRenderer } from 'electron';
-import { ArrowDownward, ArrowUpward, ChevronLeft, ChevronRight, Equalizer } from '@material-ui/icons';
-import { Drawer, List, Divider, Card, Typography, Button } from '@material-ui/core';
+import { ArrowDownward, ArrowUpward, ChevronLeft, ChevronRight, Equalizer, Refresh, Settings } from '@material-ui/icons';
+import { Drawer, List, Divider, Card, Typography, Button, IconButton } from '@material-ui/core';
 import useLeftBarStyles from '../styles/yz.styles';
 import { template } from '../components/MenuTemplate';
 import AudioDataContainer from '../components/AudioContainer';
@@ -18,7 +18,6 @@ const LeftBar = () => {
 
   const classes = useLeftBarStyles();
   const router = useRouter()
-
   const leftBarOpen = useStore(state => state.leftBarOpen)
   const setLeftBarOpen = useStore(state => state.setLeftBarOpen)
   const bottomBarOpen = useStore(state => state.bottomBarOpen)
@@ -78,6 +77,8 @@ const LeftBar = () => {
           "vid": device.vid
         }])
       }
+    } else {
+      setCombNodes(devices)
     }
   }, [devices, device])
 
@@ -152,17 +153,23 @@ const LeftBar = () => {
       classes={{ paper: clsx(classes.drawerPaper, classes.noselect, { [classes.contentBottomShift]: !bottomBarOpen }) }}
     >
       <div className={classes.drawerHeader}>
-        <div style={{ paddingLeft: '16px' }}>
+        <div style={{ paddingLeft: '16px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Typography variant="h6" onClick={() => window.reload()}>
             WLED Manager
           </Typography>
+          <IconButton disabled style={{color: '#333', padding: '3px', marginRight: '20px' }}>
+            <Settings onClick={() => router.push('/home')} />
+          </IconButton>
         </div>
       </div>
       <Divider />
-      <div style={{ padding: '0.25rem 0.25rem 0.25rem 1rem' }}>
+      <div style={{  padding: '0.25rem 0.25rem 0.25rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Typography variant="h6" color="textSecondary">
           Devices
         </Typography>
+          <IconButton  style={{color: '#999', padding: '3px', marginRight: '16px' }}>
+            <Refresh onClick={() => router.push('/home')} />
+          </IconButton>
       </div>
       <Divider />
       <List style={{ flexGrow: 1 }}>
@@ -233,9 +240,11 @@ const LeftBar = () => {
             {'.'}
           </Typography>
         </div>
-        <Typography variant="subtitle2" style={{ color: "#444" }}>
-          by Blade
+        
+        <Typography variant="subtitle2" style={{ color: "#444" }}>        
+          by Blade        
         </Typography>
+        
       </div>
     </Drawer>
     <Drawer

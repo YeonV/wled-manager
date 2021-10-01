@@ -123,12 +123,14 @@ export default function VisualDemo({
     }
 
     function handleStartButtonClick() {
+        ipcRenderer.send('UDP-start')
         setPlaying(true)
         initializeAudioAnalyser()
         requestAnimationFrame(runSpectrum)
     }
     function handleStopButtonClick() {
         setPlaying(false)
+        ipcRenderer.send('UDP-stop')
         setTimeout(() => {
             if (frequencyBandArray.length > 0) {
                 let domElements = frequencyBandArray.map((num) =>

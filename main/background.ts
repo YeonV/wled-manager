@@ -39,11 +39,21 @@ let tray = null;
     mainWindow.setSize(arg[0],arg[1])
   })
 
-  ipcMain.on('UDP', async(event, arg) => {    
-    const socket = DgramAsPromised.createSocket("udp4")    
-    const PORT = 21324    
-    const message = Buffer.from(arg[1])
+  let socket
+  let PORT
+  let message
+
+  ipcMain.on('UDP-start', () => {
+    socket = DgramAsPromised.createSocket("udp4")    
+    PORT = 21324   
+  })
+
+  ipcMain.on('UDP', async(event, arg) => {   
+    message = Buffer.from(arg[1])
     await socket.send(message, 0, message.length, PORT, arg[0].ip)
+  })
+  ipcMain.on('UDP-stop', async() => {
+    await socket.stop()
   })
 
   // tray = new Tray(nativeImage.createFromDataURL('data:image/x-icon;base64,AAABAAEAEBAAAAEAGACGAAAAFgAAAIlQTkcNChoKAAAADUlIRFIAAAAQAAAAEAgGAAAAH/P/YQAAAE1JREFUOI1j/P//PwOxgNGeAUMxE9G6cQCKDWAhpADZ2f8PMjBS3QW08QK20KaZC2gfC9hCnqouoNgARgY7zMxAyNlUdQHlXiAlO2MDAD63EVqNHAe0AAAAAElFTkSuQmCC'))
