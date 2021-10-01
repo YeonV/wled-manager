@@ -2,10 +2,10 @@ import React from 'react';
 import VisualDemo from './Visualizer';
 import { Button } from '@material-ui/core';
 
-var theStream
+// var theStream
 var theSource
 var theAnalyser
-var theGain
+// var audioContext
 
 class AudioDataContainer extends React.Component {
 
@@ -15,21 +15,28 @@ class AudioDataContainer extends React.Component {
         this.frequencyBandArray = [...Array(48).keys()]
     }
 
+    audioContext = new AudioContext();
+    // audioContext = null
+    theGain = null
+    theStream = null
+
     initializeAudioAnalyser = () => {
-        const audioContext = new AudioContext();
-        this.getMedia().then(stream => {
-            theStream = stream
-            if (!audioContext || audioContext.state === 'closed') {
+
+        // this.audioContext = new AudioContext();
+        this.getMedia(this.props.audioDeviceId).then(stream => {
+
+            this.theStream = stream
+            if (!this.audioContext || this.audioContext.state === 'closed') {
                 return
             }
-            const source = audioContext.createMediaStreamSource(stream);
+            const source = this.audioContext.createMediaStreamSource(stream);
             theSource = source
-            const analyser = audioContext.createAnalyser();
+            const analyser = this.audioContext.createAnalyser();
             theAnalyser = analyser
             analyser.fftSize = 4096;
             // source.connect(audioContext.destination);
-            const gain = audioContext.createGain()
-            theGain = gain.gain
+            const gain = this.audioContext.createGain()
+            this.theGain = gain.gain
             source.connect(gain)
             gain.connect(analyser)
             this.setState({
@@ -44,19 +51,28 @@ class AudioDataContainer extends React.Component {
         this.state.audioData && this.state.audioData.getByteFrequencyData(amplitudeArray)
         styleAdjuster(amplitudeArray)
     }
-    getMedia = async () => {
-        try {
-            return await navigator.mediaDevices.getUserMedia({
-                // waiting for state-management
-                // audio: navigator.mediaDevices.enumerateDevices()
-                // .then(function (devices) {
-                //   (clientDevice === null || devices.indexOf(clientDevice === -1)) ? true : { deviceId: { exact: clientDevice } }
-                // }),
-                audio: true,
-                video: false,
-            })
-        } catch (err) {
-            console.log('Error:', err)
+    getMedia = async (clientDevice) => {
+        
+        const ad = await navigator.mediaDevices.enumerateDevices()
+            .then((devices) => !!(clientDevice !== null && devices.find(d => d.deviceId === clientDevice)) ? clientDevice : null)
+        if (ad) {
+            try {
+                return await navigator.mediaDevices.getUserMedia({
+                    audio: { deviceId: { exact: ad } },
+                    video: false,
+                })
+            } catch (err) {
+                console.log('Error:', err)
+            }
+        } else {
+            try {
+                return await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                    video: false,
+                })
+            } catch (err) {
+                console.log('Error:', err)
+            }
         }
     }
     render() {
@@ -65,17 +81,23 @@ class AudioDataContainer extends React.Component {
             <div style={{ height: 255 }}>
                 <VisualDemo
                     initializeAudioAnalyser={this.initializeAudioAnalyser}
+                    audioContext={this.audioContext}
                     frequencyBandArray={this.frequencyBandArray}
                     getFrequencyData={this.getFrequencyData}
                     stop={() => {
-                        theGain.value = 0
-                        setTimeout(() => {
-                            theStream.getTracks().forEach(track => track.stop())
-                            this.setState({
-                                audioData: null
-                            })
-                        }, 1000);
-
+                        if (this.audioContext && this.audioContext.state === 'running') {
+                            if (this.theGain) {
+                                this.theGain.value = 0
+                            }
+                            setTimeout(() => {
+                                this.audioContext.state !== 'closed' && this.theStream && this.theStream.getTracks().forEach(track => track.stop())
+                                this.audioContext && this.audioContext.state !== 'closed' && this.audioContext.suspend()
+                                this.audioContext && this.audioContext.state !== 'closed' && this.audioContext.resume()
+                                this.setState({
+                                    audioData: null
+                                })
+                            }, 1000)
+                        }
                     }}
                 />
             </div>

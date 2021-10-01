@@ -1,23 +1,46 @@
 import React, { useRef, useState, useEffect } from 'react';
 import Paper from '@material-ui/core/Paper';
-import IconButton from '@material-ui/core/IconButton';
-import Tooltip from '@material-ui/core/Tooltip';
-import EqualizerIcon from '@material-ui/icons/Equalizer';
 import { makeStyles } from '@material-ui/core/styles';
 import { useTheme } from '@material-ui/core/styles';
 import { ipcRenderer } from 'electron';
 import { PlayArrow, Stop } from '@material-ui/icons';
 import { Button, MenuItem, Select, TextField } from '@material-ui/core';
 import ColorPicker from './ColorPicker';
-import { setPriority } from 'os';
+import useStore from '../store/store';
 
 const useStyles = makeStyles(theme => ({
     flexContainer: {
         display: 'flex',
         justifyContent: 'center',
-        paddingTop: '235px'
+        paddingTop: '275px'
     },
     frequencyBands: {
+        padding: 'calc(100vw / 160)',
+        flexShrink: 1,
+        margin: 'calc(100vw / 500)',
+        transform: 'rotateX(180deg)',
+        transformOrigin: 'top',
+        border: '1px solid transparent',
+        cursor: 'pointer',
+        zIndex: 10,
+        '.selection-active &': {
+            opacity: 0.3,
+        },
+        '&:hover': {
+            borderColor: '#999',
+            opacity: 1,
+        },
+        '&.selected': {
+            borderColor: '#bbb',
+            opacity: 1,
+        },
+    },
+    frequencyBandsBg: {
+        position: 'absolute',
+        top: 0,
+        height: '255px',
+        zIndex: -1,
+        // backgroundColor: '#000',
         padding: 'calc(100vw / 160)',
         flexShrink: 1,
         margin: 'calc(100vw / 500)',
@@ -29,12 +52,13 @@ const useStyles = makeStyles(theme => ({
             opacity: 0.3,
         },
         '&:hover': {
-            borderColor: 'white',
             opacity: 1,
         },
         '&.selected': {
-            borderColor: 'cyan',
             opacity: 1,
+        },
+        '&&:not(.selected)': {
+            backgroundColor: 'transparent !important'
         },
     }
 }));
@@ -44,53 +68,69 @@ export default function VisualDemo({
     getFrequencyData,
     initializeAudioAnalyser,
     stop,
+    audioContext
 }) {
 
     const classes = useStyles();
     const theme = useTheme();
     const amplitudeValues = useRef(null);
 
+    const device = useStore(state => state.device)
+    const audioDevice = useStore(state => state.audioDevice)
+    const setAudioDevice = useStore(state => state.setAudioDevice)
+    const audioDevices = useStore(state => state.audioDevices)
+    const setAudioDevices = useStore(state => state.setAudioDevices)
+    const color = useStore(state => state.color)
+    const setColor = useStore(state => state.setColor)
+    const bgColor = useStore(state => state.bgColor)
+    const setBgColor = useStore(state => state.setBgColor)
+
     const [activeFb, setActiveFb] = useState(-1)
-    const [audioDevices, setAudioDevices] = useState([])
-    const [audioDevice, setAudioDevice] = useState("default")
-    const [color, setColor] = useState({ r: 50, g: 100, b: 150 });
-    const [ip, setIp] = useState("192.168.1.170")
-    const [pixelCount, setPixelCount] = useState(256)
+    const [playing, setPlaying] = useState(false)
 
     function adjustFreqBandStyle(newAmplitudeData) {
+        if (audioContext.state === 'closed') {
+            cancelAnimationFrame(runSpectrum)
+            return
+        }
         amplitudeValues.current = newAmplitudeData;
         if (frequencyBandArray.length > 0) {
             let domElements = frequencyBandArray.map((num) =>
                 document.getElementById(num))
+            if (domElements.length > 0) {
+                for (let i = 0; i < frequencyBandArray.length; i++) {
+                    let num = frequencyBandArray[i]
+                    domElements[num].style.backgroundColor = `rgb(${color.r}, ${color.g}, ${color.b})`
+                    domElements[num].style.height = `${amplitudeValues.current[num]}px`
+                }
+                if (activeFb > -1) {
+                    const ledDataPrefix = [2, 1];
+                    const ratio = amplitudeValues.current[activeFb] / 256
+                    const ledData = Array(device.pixel_count)
+                        .fill([color.r, color.g, color.b])
+                        .fill([bgColor.r, bgColor.g, bgColor.b], parseInt( device.pixel_count * ratio)) 
+                        .flat()
 
-            for (let i = 0; i < frequencyBandArray.length; i++) {
-                let num = frequencyBandArray[i]
-                domElements[num].style.backgroundColor = `rgb(${color.r}, ${color.g}, ${color.b})`
-                domElements[num].style.height = `${amplitudeValues.current[num]}px`
-            }
-            if (activeFb > -1) {
-                const ledDataPrefix = [2, 1];
-                const ledData = Array(pixelCount).fill([0, 0, 0]).fill([color.r, color.g, color.b], (255 - amplitudeValues.current[activeFb])).flat()
-                ipcRenderer.send('UDP', [{ ip: ip }, [...ledDataPrefix, ...ledData]])
+                    ipcRenderer.send('UDP', [{ ip: device.ip }, [...ledDataPrefix, ...ledData]])
+                }
             }
         }
-
     };
 
     function runSpectrum() {
-        getFrequencyData(adjustFreqBandStyle)
-
-        requestAnimationFrame(runSpectrum)
+        if (audioContext.state === 'running') {
+            getFrequencyData(adjustFreqBandStyle)
+            requestAnimationFrame(runSpectrum)
+        }
     }
 
     function handleStartButtonClick() {
-        // ipcRenderer.send('UDP', [2,1,255,0,0,255,0,0,255,0,0,255,0,0])
+        setPlaying(true)
         initializeAudioAnalyser()
         requestAnimationFrame(runSpectrum)
     }
     function handleStopButtonClick() {
-        stop()
-        cancelAnimationFrame(runSpectrum)
+        setPlaying(false)
         setTimeout(() => {
             if (frequencyBandArray.length > 0) {
                 let domElements = frequencyBandArray.map((num) =>
@@ -100,7 +140,8 @@ export default function VisualDemo({
                     domElements[num].style.backgroundColor = theme.palette.background.paper
                 }
             }
-        }, 1000);
+            stop()
+        }, 200);
 
     }
 
@@ -109,15 +150,16 @@ export default function VisualDemo({
             setActiveFb(-1)
         } else {
             setActiveFb(num)
+            if (playing) {
+                handleStopButtonClick()
+            }
         }
     }
 
     useEffect(() => {
         navigator.mediaDevices.enumerateDevices()
-            .then(function (devices) {
-                console.log(devices)
-                setAudioDevices(devices)
-                // setAudioDevice(devices[0])
+            .then(function (adevices) {
+                setAudioDevices(adevices)
             })
             .catch(function (err) {
                 console.log(err.name + ": " + err.message);
@@ -125,69 +167,64 @@ export default function VisualDemo({
     }, [])
 
     return (
-
         <div>
-
             <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', flex:1 }}>
-                    <Tooltip
-                        title="Start"
-                        aria-label="Start"
-                        placement="bottom">
-                        <Button
-                            variant="outlined"
-                            id='startButton'
-                            onClick={() => handleStartButtonClick()}
-                        >
-                            <PlayArrow />
-                        </Button>
-                    </Tooltip>
-                    <Tooltip
-                        title="Stop"
-                        aria-label="Stop"
-                        placement="bottom">
-                        <Button
-                            variant="outlined"
-                            id='startButton'
-                            onClick={() => handleStopButtonClick()}
-                        >
-                            <Stop />
-                        </Button>
-                    </Tooltip>
+                <div style={{ display: 'flex', flex: 1 }}>
+                    <Button
+                        variant="outlined"
+                        disabled={playing}
+                        id='startButton'
+                        onClick={() => handleStartButtonClick()}
+                    >
+                        <PlayArrow />
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        id='startButton'
+                        disabled={!playing}
+                        onClick={() => handleStopButtonClick()}
+                    >
+                        <Stop />
+                    </Button>
                     <Select
                         variant="outlined"
-                        disableUnderline
-                        value={audioDevice}
+                        disabled={playing}
+                        value={audioDevice || 'default'}
                         style={{ width: '100%' }}
-                        onChange={(e) => {
-                            setAudioDevice(e.target.value)
-                            // WEBAUDIO CHANGE INPUT DEVICE
-                        }}
+                        onChange={(e) => { setAudioDevice(e.target.value) }}
                     >
                         {audioDevices.filter(cd => cd.kind === 'audioinput').map((d, i) =>
-                            <MenuItem key={i} value={d.deviceId} disabled>
+                            <MenuItem key={i} value={d.deviceId}>
                                 {d.label}
                             </MenuItem>
                         )}
-
                     </Select>
                 </div>
                 <div style={{ display: 'flex' }}>
-                    <TextField variant="outlined" value={pixelCount} onChange={(e) => setPixelCount(e.target.value)} style={{ width: 100 }} />
-                    <TextField variant="outlined" value={ip} onChange={(e) => setIp(e.target.value)} style={{ width: 230 }} />
-                    <ColorPicker color={color} onChange={setColor} />
+                    <TextField variant="outlined" value={device.pixel_count} disabled style={{ width: 100 }} />
+                    <TextField variant="outlined" value={device.ip} disabled style={{ width: 230 }} />
+                    <ColorPicker color={color} disabled={playing} onChange={setColor} />
+                    <ColorPicker color={bgColor} disabled={playing} onChange={setBgColor} />
                 </div>
             </div>
 
             <div className={`${classes.flexContainer} ${activeFb > -1 ? 'selection-active' : ''}`}>
                 {frequencyBandArray.map((num) =>
+                <div style={{ position: 'relative'}} key={num}>
                     <Paper
                         className={`${classes.frequencyBands} ${activeFb === num ? 'selected' : ''}`}
+                        style={{ backgroundColor: `rgb(${color.r}, ${color.g}, ${color.b})`}}
                         elevation={4}
                         id={num}
                         key={num}
                         onClick={() => handleFreqBandClick(num)}
                     />
+                    <div
+                        className={`${classes.frequencyBandsBg} ${activeFb === num ? 'selected' : ''}`}
+                        style={{ backgroundColor: `rgb(${bgColor.r}, ${bgColor.g}, ${bgColor.b})`}}                        
+                        onClick={() => handleFreqBandClick(num)}
+                    />
+                    </div>
                 )}
             </div>
 

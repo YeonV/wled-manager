@@ -3,7 +3,7 @@ import { RgbColorPicker } from "react-colorful";
 
 import useClickOutside from "../lib/useClickOutside";
 
-const ColorPicker = ({ color, onChange }) => {
+const ColorPicker = ({ color, onChange, disabled }) => {
   const popover = useRef();
   const [isOpen, toggle] = useState(false);
 
@@ -17,6 +17,8 @@ const ColorPicker = ({ color, onChange }) => {
             width: '56px',
             height: '56px',
             borderRadius: '8px',
+            opacity: disabled ? 0.2 : 1,
+            pointerEvents: disabled ? 'none' : 'auto',
             border: '2px solid #555',
             boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(0, 0, 0, 0.1)',
             cursor: 'pointer',
