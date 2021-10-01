@@ -63,7 +63,7 @@ const LeftBar = () => {
   useEffect(() => {
     if (!isZeroConf) {
       if ((combNodes.filter(n => n.ip === iframe).length > 0) || (devices.filter(n => n.ip === iframe).length)) {
-        console.log(service.name, " already exsists")
+        console.log("already exsists")
       } else {
         device && setCombNodes([...devices, {
           "name": device.name,
