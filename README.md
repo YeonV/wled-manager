@@ -1,5 +1,5 @@
 
-![state](https://img.shields.io/badge/STATE-pre_alpha-blue.svg?logo=github&logoColor=white) ![version](https://img.shields.io/github/v/release/YeonV/wled-manager?label=VERSION&logo=git&logoColor=white) [![creator](https://img.shields.io/badge/CREATOR-Yeon-blue.svg?logo=github&logoColor=white)](https://github.com/YeonV) [![creator](https://img.shields.io/badge/A.K.A-Blade-darkred.svg?logo=github&logoColor=white)](https://github.com/YeonV)
+![state](https://img.shields.io/badge/STATE-alpha-blue.svg?logo=github&logoColor=white) ![version](https://img.shields.io/github/v/release/YeonV/wled-manager?label=VERSION&logo=git&logoColor=white) [![creator](https://img.shields.io/badge/CREATOR-Yeon-blue.svg?logo=github&logoColor=white)](https://github.com/YeonV) [![creator](https://img.shields.io/badge/A.K.A-Blade-darkred.svg?logo=github&logoColor=white)](https://github.com/YeonV)
 # WLED Manager 
 ![mui](https://img.shields.io/badge/Electron-Desktop_App_Wrapper-blue.svg?logo=electron&logoColor=white) ![nextjs](https://img.shields.io/badge/Next.js-framework-blue.svg?logo=next.js&logoColor=white) ![react](https://img.shields.io/badge/React-JS_lib-blue.svg?logo=react&logoColor=white) ![mui](https://img.shields.io/badge/Material_UI-components-blue.svg?logo=material-ui&logoColor=white) 
 

@@ -5,7 +5,7 @@ import { remote } from 'electron';
 import { useRouter } from 'next/router';
 import { ipcRenderer } from 'electron';
 import { ArrowDownward, ArrowUpward, ChevronLeft, ChevronRight, Equalizer, Refresh, Settings } from '@material-ui/icons';
-import { Drawer, List, Divider, Card, Typography, Button, IconButton } from '@material-ui/core';
+import { Drawer, List, Divider, Card, Typography, Button, IconButton, Tooltip } from '@material-ui/core';
 import useLeftBarStyles from '../styles/yz.styles';
 import { template } from '../components/MenuTemplate';
 import AudioDataContainer from '../components/AudioContainer';
@@ -32,6 +32,7 @@ const LeftBar = () => {
 
   const [combNodes, setCombNodes] = useState([])
   const [isZeroConf, setIsZeroConf] = useState(router.query.zeroconf || (typeof window !== 'undefined' && window.localStorage.getItem("wled-manager-zeroconf") === 'true') || false)
+  const [singleMode, setSingleMode] = useState(router.query.singlemode || false)
 
   useEffect(() => {
     const { Menu } = remote;
@@ -60,25 +61,32 @@ const LeftBar = () => {
   }, [router.query.zeroconf])
 
   useEffect(() => {
-    if (!isZeroConf) {
-      if ((combNodes.filter(n => n.ip === iframe).length > 0) || (devices.filter(n => n.ip === iframe).length)) {
-        console.log("already exsists")
-      } else {
-        device && setCombNodes([...devices, {
+    if (router.query && router.query.singlemode) {
+      setSingleMode(true)
+    }
+  }, [router.query.singlemode])
+
+  useEffect(() => {
+    if (!isZeroConf && device) {
+      console.log(device)
+      if (!combNodes.filter(n => n.ip === device.ip).length > 0) {
+        setCombNodes((comb) => [...comb, {
           "name": device.name,
-          "type": device.arch === "esp8266" ? 82 : 32,
-          "ip": iframe,
-          "vid": device.vid
-        }])
-        device && setDevices([...devices, {
-          "name": device.name,
-          "type": device.arch === "esp8266" ? 82 : 32,
-          "ip": iframe,
-          "vid": device.vid
+          "type": device.type,
+          "ip": device.ip,
+          "vid": device.vid,
+          "pixel_count": device.pixel_count
         }])
       }
-    } else {
-      setCombNodes(devices)
+      if (!devices.filter(n => n.ip === device.ip).length) {
+        setDevices([...devices, {
+          "name": device.name,
+          "type": device.type,
+          "ip": device.ip,
+          "vid": device.vid,
+          "pixel_count": device.pixel_count
+        }])
+      }
     }
   }, [devices, device])
 
@@ -88,46 +96,76 @@ const LeftBar = () => {
       bonjour = require('bonjour')()
       bonjour.find({ type: 'wled' }, async (service) => {
         if (service.referer && service.referer.address) {
-          if ((combNodes.filter(n => n.ip === service.referer.address).length > 0) || (devices.filter(n => n.ip === service.referer.address).length)) {
-            console.log(service.name, " already exsists")
-          } else {
+          if ((!combNodes.filter(n => n.ip === service.referer.address).length > 0) || (!devices.filter(n => n.ip === service.referer.address).length)) {
             console.log("wled found:", service.name)
             await fetch(`http://${service.referer.address}/json/info`)
               .then(r => r.json())
               .then((re) => {
-                setCombNodes((devices) => [...devices, {
-                  "name": service.name,
-                  "type": re.arch === "esp8266" ? 82 : 32,
-                  "ip": service.referer.address,
-                  "vid": re.vid,
-                  "pixel_count": re.leds.count
-                }])
-                setDevices([...devices, {
-                  "name": service.name,
-                  "type": re.arch === "esp8266" ? 82 : 32,
-                  "ip": service.referer.address,
-                  "vid": re.vid,
-                  "pixel_count": re.leds.count
-                }])
+                if (!combNodes.filter(n => n.ip === service.referer.address).length > 0) {
+                  setCombNodes((comb) => [...comb, {
+                    "name": service.name,
+                    "type": re.arch === "esp8266" ? 82 : 32,
+                    "ip": service.referer.address,
+                    "vid": re.vid,
+                    "pixel_count": re.leds.count
+                  }])
+                }
+                if (!devices.filter(n => n.ip === service.referer.address).length) {
+                  setDevices([...devices, {
+                    "name": service.name,
+                    "type": re.arch === "esp8266" ? 82 : 32,
+                    "ip": service.referer.address,
+                    "vid": re.vid,
+                    "pixel_count": re.leds.count
+                  }])
+                }
               })
           }
         }
       })
     } else {
       fetch(`http://${iframe}/json/nodes`)
-        .then(r => r.json())
-        .then((res) => setDevices(res.nodes));
-      fetch(`http://${iframe}/json/info`)
-        .then(r => r.json())
-        .then((re) => {
-          setDevice({
-            "name": re.name,
-            "type": re.arch === "esp8266" ? 82 : 32,
-            "ip": iframe,
-            "vid": re.vid,
-            "pixel_count": re.leds.count
-          })
-        }).catch((error) => console.log("YZ-ERROR", error));
+        .then(r => {
+          if (r.status === 501) {
+            console.log("No zeroconf for autodiscovery available. Also WLED version should be updated")
+          }
+          return r.json()
+        })
+        .then((res) => {
+          if (res.nodes) {
+            res.nodes.forEach((node) => {
+              if ((!combNodes.filter(n => n.ip === node.ip).length > 0) || (!devices.filter(n => n.ip === node.ip).length)) {
+                console.log("wled found:", node)
+                fetch(`http://${node.ip}/json/info`)
+                  .then(r => r.json())
+                  .then((re) => {
+                    if (!combNodes.filter(n => n.ip === node.ip).length > 0) {
+                      setCombNodes((comb) => [...comb, {
+                        "name": node.name,
+                        "type": re.arch === "esp8266" ? 82 : 32,
+                        "ip": node.ip,
+                        "vid": re.vid,
+                        "pixel_count": re.leds.count
+                      }])
+                    }
+                    if (!devices.filter(n => n.ip === node.ip).length) {
+                      setDevices([...devices, {
+                        "name": node.name,
+                        "type": re.arch === "esp8266" ? 82 : 32,
+                        "ip": node.ip,
+                        "vid": re.vid,
+                        "pixel_count": re.leds.count
+                      }])
+                    }
+                  })
+              }
+            })
+          }
+        })
+        .catch((error) => {
+          console.log("error: ", error)
+        })
+
       if (router.query && router.query.ip) {
         setIframe(router.query.ip)
       }
@@ -154,22 +192,27 @@ const LeftBar = () => {
     >
       <div className={classes.drawerHeader}>
         <div style={{ paddingLeft: '16px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="h6" onClick={() => window.reload()}>
+          <Typography variant="h6">
             WLED Manager
           </Typography>
-          <IconButton disabled style={{color: '#333', padding: '3px', marginRight: '20px' }}>
-            <Settings onClick={() => router.push('/home')} />
+          <IconButton onClick={() => router.push('/home')} disabled style={{ color: '#333', padding: '3px', marginRight: '20px' }}>
+            <Settings />
           </IconButton>
         </div>
+        {singleMode && <Tooltip title={`No zeroconf (bonjour) is available, but if WLED is updated, discovery would be possible without zeroconf. You can go back and connect to a different WLED.`}>
+          <Button onClick={() => router.push('/home')} variant="outlined" size="small" style={{ color: '#999', position: 'absolute', top: 80, left: 15, minWidth: 50, padding: '0 21px', flexGrow: 0, fontSize: 'xx-small' }}>
+            Single-Device-Mode
+          </Button>
+        </Tooltip>}
       </div>
       <Divider />
-      <div style={{  padding: '0.25rem 0.25rem 0.25rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ padding: '0.25rem 0.25rem 0.25rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Typography variant="h6" color="textSecondary">
           Devices
         </Typography>
-          <IconButton  style={{color: '#999', padding: '3px', marginRight: '16px' }}>
-            <Refresh onClick={() => router.push('/home')} />
-          </IconButton>
+        <IconButton onClick={() => router.push('/home')} style={{ color: '#999', padding: '3px', marginRight: '16px' }}>
+          <Refresh />
+        </IconButton>
       </div>
       <Divider />
       <List style={{ flexGrow: 1 }}>
@@ -240,11 +283,11 @@ const LeftBar = () => {
             {'.'}
           </Typography>
         </div>
-        
-        <Typography variant="subtitle2" style={{ color: "#444" }}>        
-          by Blade        
+
+        <Typography variant="subtitle2" style={{ color: "#444" }}>
+          by Blade
         </Typography>
-        
+
       </div>
     </Drawer>
     <Drawer

@@ -38,6 +38,9 @@ let tray = null;
   ipcMain.on('resize-me-please', (event, arg) => {
     mainWindow.setSize(arg[0],arg[1])
   })
+  ipcMain.on('close', (event) => {
+    app.quit();
+  })
 
   let socket
   let PORT
