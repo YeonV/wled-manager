@@ -72,6 +72,16 @@ class AudioDataContainer extends React.Component {
                     audioContext={this.audioContext}
                     frequencyBandArray={this.frequencyBandArray}
                     getFrequencyData={this.getFrequencyData}
+                    refresh={() => {
+                        if (this.audioContext && this.audioContext.state === 'running') {
+                            this.audioContext.state !== 'closed' && this.theStream && this.theStream.getTracks().forEach(track => track.stop())
+                            this.audioContext && this.audioContext.state !== 'closed' && this.audioContext.suspend()
+                            this.audioContext && this.audioContext.state !== 'closed' && this.audioContext.resume()
+                            this.setState({
+                                audioData: null
+                            })
+                        }
+                    }}
                     stop={() => {
                         if (this.audioContext && this.audioContext.state === 'running') {
                             if (this.theGain) {
@@ -84,7 +94,7 @@ class AudioDataContainer extends React.Component {
                                 this.setState({
                                     audioData: null
                                 })
-                            }, 1000)
+                            }, 800)
                         }
                     }}
                 />
