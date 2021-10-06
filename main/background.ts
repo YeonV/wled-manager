@@ -32,9 +32,9 @@ let tray = null;
   const mainWindow = createWindow('main', {
     width: 480,
     height: 800,
-    titleBarStyle: "hidden", // <-- add this line if needed
+    titleBarStyle: "hidden",
     webPreferences: {
-      enableRemoteModule: true, // <-- add this line
+      enableRemoteModule: true,
       webSecurity: false,
       backgroundThrottling: false
     },

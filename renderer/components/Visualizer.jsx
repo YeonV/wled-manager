@@ -1,67 +1,13 @@
 import React, { useRef, useState, useEffect } from 'react';
-import Paper from '@material-ui/core/Paper';
-import { makeStyles } from '@material-ui/core/styles';
 import { useTheme } from '@material-ui/core/styles';
 import { ipcRenderer } from 'electron';
 import { PlayArrow, Stop } from '@material-ui/icons';
-import { Button, MenuItem, Select, TextField, Switch, Typography } from '@material-ui/core';
+import { Button, MenuItem, TextField, Typography, Paper } from '@material-ui/core';
 import ColorPicker from './ColorPicker';
 import useStore from '../store/store';
 import Effect, { effects } from '../effects';
-
-const useStyles = makeStyles(theme => ({
-    flexContainer: {
-        display: 'flex',
-        justifyContent: 'center',
-        paddingTop: '275px'
-    },
-    frequencyBands: {
-        padding: 'calc(100vw / 160)',
-        flexShrink: 1,
-        margin: 'calc(100vw / 500)',
-        transform: 'rotateX(180deg)',
-        transformOrigin: 'top',
-        border: '1px solid transparent',
-        cursor: 'pointer',
-        zIndex: 10,
-        '.selection-active &': {
-            opacity: 0.3,
-        },
-        '&:hover': {
-            borderColor: '#999',
-            opacity: 1,
-        },
-        '&.selected': {
-            borderColor: '#bbb',
-            opacity: 1,
-        },
-    },
-    frequencyBandsBg: {
-        position: 'absolute',
-        top: 0,
-        height: '255px',
-        zIndex: -1,
-        padding: 'calc(100vw / 160)',
-        flexShrink: 1,
-        margin: 'calc(100vw / 500)',
-        transform: 'rotateX(180deg)',
-        transformOrigin: 'top',
-        border: '1px solid transparent',
-        cursor: 'pointer',
-        '.selection-active &': {
-            opacity: 0.3,
-        },
-        '&:hover': {
-            opacity: 1,
-        },
-        '&.selected': {
-            opacity: 1,
-        },
-        '&&:not(.selected)': {
-            backgroundColor: 'transparent !important'
-        },
-    }
-}));
+import Toggle from './Toggle';
+import useVisualizerStyles from './Visualizer.styles';
 
 export default function VisualDemo({
     frequencyBandArray,
@@ -72,7 +18,7 @@ export default function VisualDemo({
     audioContext
 }) {
 
-    const classes = useStyles();
+    const classes = useVisualizerStyles();
     const theme = useTheme();
     const amplitudeValues = useRef(null);
 
@@ -136,10 +82,6 @@ export default function VisualDemo({
                 }
                 if (activeFb > -1) {
                     const ledDataPrefix = [2, 1];
-                    // const ratio = amplitudeValues.current[activeFb] / 256
-                    // const ledData = Array(device.pixel_count)
-                    //     .fill([color.r, color.g, color.b])
-                    //     .fill([bgColor.r, bgColor.g, bgColor.b], parseInt(device.pixel_count * ratio))
 
                     const ledData = Effect({
                         type: effect,
@@ -178,7 +120,6 @@ export default function VisualDemo({
     function handleStopButtonClick() {
         setPlaying(false)
         ipcRenderer.send('UDP-stop')
-        // setTimeout(() => {
         if (frequencyBandArray.length > 0) {
             let domElements = frequencyBandArray.map((num) =>
                 document.getElementById(num))
@@ -188,7 +129,6 @@ export default function VisualDemo({
             }
         }
         stop(800)
-        // }, 0);
     }
 
     function handleFreqBandClick(num) {
@@ -265,53 +205,24 @@ export default function VisualDemo({
                     </TextField>
                 </div>
                 <div style={{ display: 'flex', paddingTop: 10 }}>
-                    {/* <TextField variant="outlined" value={device.pixel_count} disabled style={{ width: 100 }} />
-                    <TextField variant="outlined" value={device.ip} disabled style={{ width: 230 }} /> */}
                     <ColorPicker label="COL" color={color} onChange={settingColor} />
-                    {effect !== "BladeWave (Test)" && <ColorPicker label="BG" color={bgColor} onChange={settingBgColor} />}
-                    <div
-                        style={{
-                            width: '56px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            height: '56px',
-                            borderRadius: '8px',
-                            border: '2px solid #555',
-                            backgroundColor: flipped ? '#666' : 'inherit',
-                            boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(0, 0, 0, 0.1)',
-                            cursor: 'pointer',
-
-                        }}
-                        onClick={() => settingFlipped(!flipped)}
-                    >
-                        <span style={{
-                            WebkitTouchCallout: 'none',
-                            WebkitUserSelect: 'none',
-                            KhtmlUserSelect: 'none',
-                            MozUserSelect: 'none',
-                            MsUserSelect: 'none',
-                            userSelect: 'none'
-                        }}>Flip</span>
-                    </div>
+                    {effect !== "BladeWave (Test)" &&
+                        <ColorPicker label="BG" color={bgColor} onChange={settingBgColor} />
+                    }
+                    <Toggle label="Flip" value={flipped} setValue={settingFlipped} />
                 </div>
             </div>
-            {(activeFb === -1 && effect === 'BladePower') && <Typography variant={"h3"} style={{
-                position: 'absolute',
-                left: '50%',
-                top: '50%',
-                transform: 'translate(-50%, -50%)',
-                textAlign: 'center',
-                color: '#444'
-            }}>
-                Please select a band at the bottom
-            </Typography>}
+            {(activeFb === -1 && effect === 'BladePower') &&
+                <Typography variant={"h3"} className={classes.effectNote}>
+                    Please select a band at the bottom
+                </Typography>
+            }
             <div className={`${classes.flexContainer} ${activeFb > -1 ? 'selection-active' : ''}`}>
                 {frequencyBandArray.map((num) =>
                     <div style={{ position: 'relative' }} key={num}>
                         <Paper
                             className={`${classes.frequencyBands} ${activeFb === num ? 'selected' : ''}`}
-                            style={{ backgroundColor: `rgb(${color.r}, ${color.g}, ${color.b})` }}
+                            style={{ backgroundColor: `rgb(${color.r}, ${color.g}, ${color.b})`, padding: `calc(100vw / ${(console.log(frequencyBandArray.length) || frequencyBandArray.length) * 4} )` }}
                             elevation={4}
                             id={num}
                             key={num}
@@ -319,13 +230,12 @@ export default function VisualDemo({
                         />
                         <div
                             className={`${classes.frequencyBandsBg} ${activeFb === num ? 'selected' : ''}`}
-                            style={{ backgroundColor: `rgb(${bgColor.r}, ${bgColor.g}, ${bgColor.b})` }}
+                            style={{ backgroundColor: `rgb(${bgColor.r}, ${bgColor.g}, ${bgColor.b})`, padding: `calc(100vw / ${(console.log(frequencyBandArray.length) || frequencyBandArray.length) * 4} )` }}
                             onClick={() => handleFreqBandClick(num)}
                         />
                     </div>
                 )}
             </div>
-
         </div>
 
     );

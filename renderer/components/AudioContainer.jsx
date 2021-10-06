@@ -6,7 +6,7 @@ class AudioDataContainer extends React.Component {
     constructor(props) {
         super(props);
         this.state = {}
-        this.frequencyBandArray = [...Array(48).keys()]
+        this.frequencyBandArray = [...Array(64).keys()]
     }
 
     audioContext = new AudioContext();
@@ -21,7 +21,7 @@ class AudioDataContainer extends React.Component {
             }
             const source = this.audioContext.createMediaStreamSource(stream);
             const analyser = this.audioContext.createAnalyser();
-            analyser.fftSize = 4096;
+            analyser.fftSize = 128;
             const gain = this.audioContext.createGain()
             this.theGain = gain.gain
             source.connect(gain)

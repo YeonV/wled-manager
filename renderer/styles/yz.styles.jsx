@@ -1,7 +1,7 @@
 import { makeStyles } from '@material-ui/core/styles';
 
 const drawerWidth = 240
-const drawerBottomHeight = 340
+const drawerBottomHeight = 350
 const drawerBottomHeightExtra = 'calc(100vh - 450px)'
 
 const useLeftBarStyles = makeStyles((theme) => ({
