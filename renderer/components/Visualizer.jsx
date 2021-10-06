@@ -4,9 +4,10 @@ import { makeStyles } from '@material-ui/core/styles';
 import { useTheme } from '@material-ui/core/styles';
 import { ipcRenderer } from 'electron';
 import { PlayArrow, Stop } from '@material-ui/icons';
-import { Button, MenuItem, Select, TextField } from '@material-ui/core';
+import { Button, MenuItem, Select, TextField, Switch, Typography } from '@material-ui/core';
 import ColorPicker from './ColorPicker';
 import useStore from '../store/store';
+import Effect, { effects } from '../effects';
 
 const useStyles = makeStyles(theme => ({
     flexContainer: {
@@ -67,6 +68,7 @@ export default function VisualDemo({
     getFrequencyData,
     initializeAudioAnalyser,
     stop,
+    refresh,
     audioContext
 }) {
 
@@ -86,6 +88,36 @@ export default function VisualDemo({
 
     const [activeFb, setActiveFb] = useState(-1)
     const [playing, setPlaying] = useState(false)
+    const [flipped, setFlipped] = useState(false)
+    const [effect, setEffect] = useState("BladePower")
+
+    const settingColor = (clr) => {
+        setColor(clr)
+        if (playing) {
+            refresh()
+        }
+    }
+    const settingBgColor = (clr) => {
+        setBgColor(clr)
+        if (playing) {
+            refresh()
+        }
+    }
+    const settingFlipped = (flp) => {
+        setFlipped(flp)
+        if (playing) {
+            refresh()
+        }
+    }
+
+    useEffect(() => {
+        if (playing) {
+            setTimeout(() => {
+                initializeAudioAnalyser()
+                requestAnimationFrame(runSpectrum)
+            }, 100)
+        }
+    }, [color, bgColor, flipped])
 
     function adjustFreqBandStyle(newAmplitudeData) {
         if (audioContext.state === 'closed') {
@@ -104,16 +136,31 @@ export default function VisualDemo({
                 }
                 if (activeFb > -1) {
                     const ledDataPrefix = [2, 1];
-                    const ratio = amplitudeValues.current[activeFb] / 256
-                    const ledData = Array(device.pixel_count)
-                        .fill([color.r, color.g, color.b])
-                        .fill([bgColor.r, bgColor.g, bgColor.b], parseInt( device.pixel_count * ratio)) 
-                        .flat()
-                    ipcRenderer.send('UDP', [{ ip: device.ip }, [...ledDataPrefix, ...ledData]])
+                    // const ratio = amplitudeValues.current[activeFb] / 256
+                    // const ledData = Array(device.pixel_count)
+                    //     .fill([color.r, color.g, color.b])
+                    //     .fill([bgColor.r, bgColor.g, bgColor.b], parseInt(device.pixel_count * ratio))
+
+                    const ledData = Effect({
+                        type: effect,
+                        config: {
+                            ampValues: amplitudeValues.current,
+                            pixel_count: device.pixel_count,
+                            color,
+                            bgColor,
+                            activeFb
+                        }
+                    })
+                    // console.log(ledData)
+                    ledData && ledData.length > 1 && ipcRenderer.send('UDP', [{ ip: device.ip }, flipped
+                        ? [...ledDataPrefix, ...ledData.reverse().flat()]
+                        : [...ledDataPrefix, ...ledData.flat()]])
                 }
             }
         }
     };
+
+
 
     function runSpectrum() {
         if (audioContext.state === 'running') {
@@ -131,17 +178,17 @@ export default function VisualDemo({
     function handleStopButtonClick() {
         setPlaying(false)
         ipcRenderer.send('UDP-stop')
-        setTimeout(() => {
-            if (frequencyBandArray.length > 0) {
-                let domElements = frequencyBandArray.map((num) =>
-                    document.getElementById(num))
-                for (let i = 0; i < frequencyBandArray.length; i++) {
-                    let num = frequencyBandArray[i]
-                    domElements[num].style.backgroundColor = theme.palette.background.paper
-                }
+        // setTimeout(() => {
+        if (frequencyBandArray.length > 0) {
+            let domElements = frequencyBandArray.map((num) =>
+                document.getElementById(num))
+            for (let i = 0; i < frequencyBandArray.length; i++) {
+                let num = frequencyBandArray[i]
+                domElements[num].style.backgroundColor = theme.palette.background.paper
             }
-            stop()
-        }, 200);
+        }
+        stop(800)
+        // }, 0);
     }
 
     function handleFreqBandClick(num) {
@@ -168,7 +215,7 @@ export default function VisualDemo({
     return (
         <div>
             <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', flex: 1 }}>
+                <div style={{ display: 'flex', flex: 1, paddingTop: 10 }}>
                     <Button
                         variant="outlined"
                         disabled={playing}
@@ -185,8 +232,10 @@ export default function VisualDemo({
                     >
                         <Stop />
                     </Button>
-                    <Select
+                    <TextField
+                        select
                         variant="outlined"
+                        label="Audio Input"
                         disabled={playing}
                         value={audioDevice || 'default'}
                         style={{ width: '100%' }}
@@ -197,32 +246,82 @@ export default function VisualDemo({
                                 {d.label}
                             </MenuItem>
                         )}
-                    </Select>
+                    </TextField>
+                    <TextField
+                        select
+                        variant="outlined"
+                        disabled={playing}
+                        title="Effect"
+                        label="Effect"
+                        value={effect}
+                        style={{ width: '50%' }}
+                        onChange={(e) => { setEffect(e.target.value) }}
+                    >
+                        {effects.map((d, i) =>
+                            <MenuItem key={d} value={d}>
+                                {d}
+                            </MenuItem>
+                        )}
+                    </TextField>
                 </div>
-                <div style={{ display: 'flex' }}>
-                    <TextField variant="outlined" value={device.pixel_count} disabled style={{ width: 100 }} />
-                    <TextField variant="outlined" value={device.ip} disabled style={{ width: 230 }} />
-                    <ColorPicker color={color} disabled={playing} onChange={setColor} />
-                    <ColorPicker color={bgColor} disabled={playing} onChange={setBgColor} />
+                <div style={{ display: 'flex', paddingTop: 10 }}>
+                    {/* <TextField variant="outlined" value={device.pixel_count} disabled style={{ width: 100 }} />
+                    <TextField variant="outlined" value={device.ip} disabled style={{ width: 230 }} /> */}
+                    <ColorPicker label="COL" color={color} onChange={settingColor} />
+                    {effect !== "BladeWave (Test)" && <ColorPicker label="BG" color={bgColor} onChange={settingBgColor} />}
+                    <div
+                        style={{
+                            width: '56px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            height: '56px',
+                            borderRadius: '8px',
+                            border: '2px solid #555',
+                            backgroundColor: flipped ? '#666' : 'inherit',
+                            boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(0, 0, 0, 0.1)',
+                            cursor: 'pointer',
+
+                        }}
+                        onClick={() => settingFlipped(!flipped)}
+                    >
+                        <span style={{
+                            WebkitTouchCallout: 'none',
+                            WebkitUserSelect: 'none',
+                            KhtmlUserSelect: 'none',
+                            MozUserSelect: 'none',
+                            MsUserSelect: 'none',
+                            userSelect: 'none'
+                        }}>Flip</span>
+                    </div>
                 </div>
             </div>
-
+            {(activeFb === -1 && effect === 'BladePower') && <Typography variant={"h3"} style={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                textAlign: 'center',
+                color: '#444'
+            }}>
+                Please select a band at the bottom
+            </Typography>}
             <div className={`${classes.flexContainer} ${activeFb > -1 ? 'selection-active' : ''}`}>
                 {frequencyBandArray.map((num) =>
-                <div style={{ position: 'relative'}} key={num}>
-                    <Paper
-                        className={`${classes.frequencyBands} ${activeFb === num ? 'selected' : ''}`}
-                        style={{ backgroundColor: `rgb(${color.r}, ${color.g}, ${color.b})`}}
-                        elevation={4}
-                        id={num}
-                        key={num}
-                        onClick={() => handleFreqBandClick(num)}
-                    />
-                    <div
-                        className={`${classes.frequencyBandsBg} ${activeFb === num ? 'selected' : ''}`}
-                        style={{ backgroundColor: `rgb(${bgColor.r}, ${bgColor.g}, ${bgColor.b})`}}                        
-                        onClick={() => handleFreqBandClick(num)}
-                    />
+                    <div style={{ position: 'relative' }} key={num}>
+                        <Paper
+                            className={`${classes.frequencyBands} ${activeFb === num ? 'selected' : ''}`}
+                            style={{ backgroundColor: `rgb(${color.r}, ${color.g}, ${color.b})` }}
+                            elevation={4}
+                            id={num}
+                            key={num}
+                            onClick={() => handleFreqBandClick(num)}
+                        />
+                        <div
+                            className={`${classes.frequencyBandsBg} ${activeFb === num ? 'selected' : ''}`}
+                            style={{ backgroundColor: `rgb(${bgColor.r}, ${bgColor.g}, ${bgColor.b})` }}
+                            onClick={() => handleFreqBandClick(num)}
+                        />
                     </div>
                 )}
             </div>
