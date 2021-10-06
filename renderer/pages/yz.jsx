@@ -301,10 +301,10 @@ const LeftBar = () => {
     </Drawer>
 
     <main className={clsx(classes.content, classes.contentBottom, { [classes.contentShift]: !leftBarOpen }, { [classes.contentBottomShift]: !bottomBarOpen })}>
-      <div className={clsx(classes.menuButton, { [classes.contentShift]: !leftBarOpen }, { [classes.contentBottomShift]: !leftBarOpen })}>
-        <Button onClick={() => setLeftBarOpen(!leftBarOpen)} style={{ flex: 1, minWidth: 'unset' }}>
+      <div onClick={() => setLeftBarOpen(!leftBarOpen)} className={clsx(classes.menuButton, { [classes.contentBottomShift]: !leftBarOpen })}>
+        {/* <div onClick={() => setLeftBarOpen(!leftBarOpen)} style={{ flex: 1, minWidth: 'unset' }}> */}
           {leftBarOpen ? <ChevronLeft /> : <ChevronRight />}
-        </Button>
+        {/* </div> */}
       </div>
       <iframe src={`http://${iframe}/`} width="100%" height="100%" style={{ border: 0 }} />
     </main>

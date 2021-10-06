@@ -76,8 +76,9 @@ const useLeftBarStyles = makeStyles((theme) => ({
         height: 'calc(100vh - 30px)',
         background: 'transparent',
         padding: 0,
+        position: 'relative',
         transition: theme.transitions.create('margin', {
-            easing: theme.transitions.easing.sharp,
+            easing: theme.transitions.easing.easeIn,
             duration: theme.transitions.duration.leavingScreen,
         }),
         marginLeft: drawerWidth,
@@ -96,19 +97,24 @@ const useLeftBarStyles = makeStyles((theme) => ({
         paddingBottom: drawerBottomHeight,
     },
     menuButton: {
-        transition: theme.transitions.create('margin', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-        }),
-        marginLeft: drawerWidth,
+        // transition: theme.transitions.create('margin', {
+        //     easing: theme.transitions.easing.easeIn,
+        //     duration: theme.transitions.duration.leavingScreen,
+        // }),
+        // marginLeft: drawerWidth,
         position: 'absolute',
-        top: 69,
-        left: 0,
+        top: 'calc((100% - 382px) / 2)',
+        left: -1,
         width: 42,
         height: 42,
         border: '1px solid rgba(255, 255, 255, 0.12)',
         borderLeft: 0,
-        display: 'flex'
+        display: 'flex',
+        justifyContent: 'center', 
+        alignItems: 'center',
+        cursor: 'pointer',
+        borderLeft: '1px solid #111',
+        zIndex: 1200,
     },
     contentShift: {
         transition: theme.transitions.create('margin', {
