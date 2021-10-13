@@ -1,15 +1,69 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { useTheme } from '@material-ui/core/styles';
+import { useTheme, styled } from '@material-ui/core/styles';
 import { ipcRenderer } from 'electron';
 import { PlayArrow, Stop } from '@material-ui/icons';
-import { Button, MenuItem, TextField, Typography, Paper } from '@material-ui/core';
+import { Button, MenuItem, TextField, Typography, Paper, Box, Slider } from '@material-ui/core';
 import ColorPicker from './ColorPicker';
 import useStore from '../store/store';
 import Effect, { effects } from '../effects';
 import Toggle from './Toggle';
 import useVisualizerStyles from './Visualizer.styles';
 
-export default function VisualDemo({
+
+const YZslider = styled(Slider)({
+    color: 'white',
+    height: 8,
+    '& .MuiSlider-track': {
+        border: 'none',
+        width: 0,
+    },
+    '& .MuiSlider-rail': {
+        border: 'none',
+        width: 0,
+    },
+    '& .MuiSlider-thumb': {
+        height: 20,
+        width: 20,
+        marginLeft: -9,
+        backgroundColor: '#fff0',
+        '&:focus, &:hover, &.Mui-active, &.Mui-focusVisible': {
+            boxShadow: 'inherit',
+        },
+        '&:before': {
+            content: '"⬍"',
+            position: 'absolute',
+            left: 0,
+            top: -8,
+            width: 20,
+            height: 20,
+            fontSize: 30,
+            color: '#444',
+        },
+        '&:after': {
+            top: 12,
+            left: -20,
+            content: "",
+            position: 'absolute',
+            height: 10,
+            width: '100vw',
+            borderTop: '1px dashed #444',
+            borderRadius: 0,
+            right: 'unset',
+            bottom: 'unset',
+        },
+        '&:hover': {
+            '&:after': {
+                borderColor: '#aaa'
+            },
+            '&:before': {
+                color: '#aaa'
+            }
+        }
+    },
+});
+
+
+export default function Visualizer({
     frequencyBandArray,
     getFrequencyData,
     initializeAudioAnalyser,
@@ -33,9 +87,12 @@ export default function VisualDemo({
     const setBgColor = useStore(state => state.setBgColor)
 
     const [activeFb, setActiveFb] = useState(-1)
+    const [activeRightFb, setActiveRightFb] = useState(-1)
     const [playing, setPlaying] = useState(false)
     const [flipped, setFlipped] = useState(false)
     const [effect, setEffect] = useState("BladePower")
+    const [volume, setVolume] = useState(0)
+    const [innerVolume, setInnerVolume] = useState(0)
 
     const settingColor = (clr) => {
         setColor(clr)
@@ -49,21 +106,31 @@ export default function VisualDemo({
             refresh()
         }
     }
+
     const settingFlipped = (flp) => {
         setFlipped(flp)
         if (playing) {
             refresh()
         }
     }
-
-    useEffect(() => {
+    const settingActiveFb = (act) => {
+        setActiveFb(act)
         if (playing) {
-            setTimeout(() => {
-                initializeAudioAnalyser()
-                requestAnimationFrame(runSpectrum)
-            }, 100)
+            refresh()
         }
-    }, [color, bgColor, flipped])
+    }
+    const settingActiveRightFb = (act) => {
+        setActiveRightFb(act)
+        if (playing) {
+            refresh()
+        }
+    }
+    const settingVolume = () => {
+        setInnerVolume(volume)
+        if (playing) {
+            refresh()
+        }
+    }
 
     function adjustFreqBandStyle(newAmplitudeData) {
         if (audioContext.state === 'closed') {
@@ -90,7 +157,8 @@ export default function VisualDemo({
                             pixel_count: device.pixel_count,
                             color,
                             bgColor,
-                            activeFb
+                            activeFb,
+                            volume: volume
                         }
                     })
                     // console.log(ledData)
@@ -101,8 +169,6 @@ export default function VisualDemo({
             }
         }
     };
-
-
 
     function runSpectrum() {
         if (audioContext.state === 'running') {
@@ -117,6 +183,7 @@ export default function VisualDemo({
         initializeAudioAnalyser()
         requestAnimationFrame(runSpectrum)
     }
+
     function handleStopButtonClick() {
         setPlaying(false)
         ipcRenderer.send('UDP-stop')
@@ -133,14 +200,52 @@ export default function VisualDemo({
 
     function handleFreqBandClick(num) {
         if (activeFb === num) {
-            setActiveFb(-1)
-        } else {
-            setActiveFb(num)
-            if (playing) {
-                handleStopButtonClick()
+            settingActiveFb(-1)
+            return
+        }
+        if (activeRightFb > -1) {
+            if (num > activeRightFb) {
+                settingActiveRightFb(-1)
+                settingActiveFb(num)
+                return
             }
+            settingActiveFb(num)
+        } else {
+            settingActiveFb(num)
         }
     }
+
+    function handleFreqBandRightClick(num) {
+        if (activeRightFb === num) {
+            settingActiveRightFb(-1)
+            return
+        }
+        if (activeFb > -1) {
+            if (activeFb > num) {
+                settingActiveRightFb(num)
+                settingActiveFb(-1)
+                return
+            }
+            settingActiveRightFb(num)
+        } else {
+            settingActiveRightFb(num)
+        }
+    }
+
+    function preventHorizontalKeyboardNavigation(event) {
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            event.preventDefault();
+        }
+    }
+
+    useEffect(() => {
+        if (playing) {
+            setTimeout(() => {
+                initializeAudioAnalyser()
+                requestAnimationFrame(runSpectrum)
+            }, 100)
+        }
+    }, [color, bgColor, flipped, innerVolume, activeFb, activeRightFb])
 
     useEffect(() => {
         navigator.mediaDevices.enumerateDevices()
@@ -212,26 +317,54 @@ export default function VisualDemo({
                     <Toggle label="Flip" value={flipped} setValue={settingFlipped} />
                 </div>
             </div>
+            <Box sx={{ height: 255, position: 'absolute', zIndex: 1, pointerEvents: 'none', top: 88, left: 0, right: 0, paddingLeft: 16, background: `linear-gradient(to top, #000c, #000c ${volume}%, transparent ${volume + 1}%)` }} />
+            <Box sx={{ height: 255, position: 'absolute', zIndex: 2, top: 88, left: 0, paddingLeft: 16 }}>
+                <YZslider
+                    orientation="vertical"
+                    value={volume}
+                    color="inherit"
+                    onChange={(e, v) => setVolume(v)}
+                    onChangeCommitted={settingVolume}
+                    min={0}
+                    max={100}
+                    aria-label="Temperature"
+                    onKeyDown={preventHorizontalKeyboardNavigation}
+                />
+            </Box>
             {(activeFb === -1 && effect === 'BladePower') &&
                 <Typography variant={"h3"} className={classes.effectNote}>
                     Please select a band at the bottom
                 </Typography>
             }
-            <div className={`${classes.flexContainer} ${activeFb > -1 ? 'selection-active' : ''}`}>
+            <div className={`${classes.flexContainer} ${(activeFb > -1 || activeRightFb > -1) ? 'selection-active' : ''}`}>
                 {frequencyBandArray.map((num) =>
                     <div style={{ position: 'relative' }} key={num}>
                         <Paper
-                            className={`${classes.frequencyBands} ${activeFb === num ? 'selected' : ''}`}
-                            style={{ backgroundColor: `rgb(${color.r}, ${color.g}, ${color.b})`, padding: `calc(100vw / ${(console.log(frequencyBandArray.length) || frequencyBandArray.length) * 4} )` }}
+                            className={`${classes.frequencyBands} ${(activeFb > -1 && activeRightFb > -1)
+                                ? ((activeFb <= num && activeRightFb >= num)
+                                    ? 'selected'
+                                    : '')
+                                : (activeFb === num || activeRightFb === num)
+                                    ? 'selected'
+                                    : ''}`}
+                            style={{ backgroundColor: `rgb(${color.r}, ${color.g}, ${color.b})`, padding: `calc(100vw / ${(frequencyBandArray.length) * 4} )` }}
                             elevation={4}
                             id={num}
                             key={num}
                             onClick={() => handleFreqBandClick(num)}
+                            onContextMenu={() => handleFreqBandRightClick(num)}
                         />
                         <div
-                            className={`${classes.frequencyBandsBg} ${activeFb === num ? 'selected' : ''}`}
-                            style={{ backgroundColor: `rgb(${bgColor.r}, ${bgColor.g}, ${bgColor.b})`, padding: `calc(100vw / ${(console.log(frequencyBandArray.length) || frequencyBandArray.length) * 4} )` }}
+                            className={`${classes.frequencyBandsBg} ${(activeFb > -1 && activeRightFb > -1)
+                                ? ((activeFb <= num && activeRightFb >= num)
+                                    ? 'selected'
+                                    : '')
+                                : (activeFb === num || activeRightFb === num)
+                                    ? 'selected'
+                                    : ''}`}
+                            style={{ backgroundColor: `rgb(${bgColor.r}, ${bgColor.g}, ${bgColor.b})`, padding: `calc(100vw / ${frequencyBandArray.length * 4} )` }}
                             onClick={() => handleFreqBandClick(num)}
+                            onContextMenu={() => handleFreqBandRightClick(num)}
                         />
                     </div>
                 )}

@@ -8,6 +8,8 @@ import {
 import serve from 'electron-serve';
 import { createWindow } from './helpers';
 import { DgramAsPromised } from "dgram-as-promised"
+import installExtension, { REDUX_DEVTOOLS } from 'electron-devtools-installer';
+
 
 const path = require('path');
 const isProd: boolean = process.env.NODE_ENV === 'production';
@@ -34,6 +36,7 @@ let tray = null;
     height: 800,
     titleBarStyle: "hidden",
     webPreferences: {
+      contextIsolation: false,      
       enableRemoteModule: true,
       webSecurity: false,
       backgroundThrottling: false
@@ -90,6 +93,9 @@ let tray = null;
   } else {
     const port = process.argv[2];
     await mainWindow.loadURL(`http://localhost:${port}/home`);
+    installExtension(REDUX_DEVTOOLS)
+        .then((name) => console.log(`Added Extension:  ${name}`))
+        .catch((err) => console.log('An error occurred: ', err));
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
 })();

@@ -1,12 +1,12 @@
 import React from 'react';
-import VisualDemo from './Visualizer';
+import Visualizer from './Visualizer';
 
 class AudioDataContainer extends React.Component {
 
     constructor(props) {
         super(props);
         this.state = {}
-        this.frequencyBandArray = [...Array(64).keys()]
+        this.frequencyBandArray = [...Array(props.bandCount).keys()]
     }
 
     audioContext = new AudioContext();
@@ -19,9 +19,10 @@ class AudioDataContainer extends React.Component {
             if (!this.audioContext || this.audioContext.state === 'closed') {
                 return
             }
+            console.log(this.audioContext)
             const source = this.audioContext.createMediaStreamSource(stream);
-            const analyser = this.audioContext.createAnalyser();
-            analyser.fftSize = 128;
+            const analyser = this.audioContext.createAnalyser();            
+            analyser.fftSize = this.props.fft;
             const gain = this.audioContext.createGain()
             this.theGain = gain.gain
             source.connect(gain)
@@ -30,7 +31,7 @@ class AudioDataContainer extends React.Component {
                 audioData: analyser
             })
         })
-    }
+    }    
 
     getFrequencyData = (styleAdjuster) => {
         const bufferLength = this.state.audioData && this.state.audioData.frequencyBinCount;
@@ -66,8 +67,8 @@ class AudioDataContainer extends React.Component {
     render() {
 
         return (
-            <div style={{ height: 255 }}>
-                <VisualDemo
+            <div style={{ height: 255, position: 'relative' }}>
+                <Visualizer
                     initializeAudioAnalyser={this.initializeAudioAnalyser}
                     audioContext={this.audioContext}
                     frequencyBandArray={this.frequencyBandArray}

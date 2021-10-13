@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { remote } from 'electron';
 import { useRouter } from 'next/router';
 import { ipcRenderer } from 'electron';
-import { ArrowDownward, ArrowUpward, ChevronLeft, ChevronRight, Equalizer, Refresh, Settings } from '@material-ui/icons';
+import { ArrowDownward, ArrowUpward, ChevronLeft, ChevronRight, Close, Equalizer, Refresh, Settings } from '@material-ui/icons';
 import { Drawer, List, Divider, Card, Typography, Button, IconButton, Tooltip } from '@material-ui/core';
 import useLeftBarStyles from '../styles/yz.styles';
 import { template } from '../components/MenuTemplate';
@@ -16,7 +16,7 @@ const LeftBar = () => {
     return <>server-side-rendered</>
   }
 
-  const classes = useLeftBarStyles();
+
   const router = useRouter()
   const leftBarOpen = useStore(state => state.leftBarOpen)
   const setLeftBarOpen = useStore(state => state.setLeftBarOpen)
@@ -29,6 +29,14 @@ const LeftBar = () => {
   const device = useStore(state => state.device)
   const setDevice = useStore(state => state.setDevice)
   const audioDevice = useStore(state => state.audioDevice)
+  const setDrawerBottomHeight = useStore(state => state.setDrawerBottomHeight)
+  const drawerWidth = useStore(state => state.drawerWidth)
+  const drawerBottomHeight = useStore(state => state.drawerBottomHeight)
+  const audioSettings = useStore(state => state.audioSettings)
+  // const fft = useStore(state => state.audioSettings.fft)
+  // const bands = useStore(state => state.audioSettings.bands)
+  const setAudioSettings = useStore(state => state.setAudioSettings)
+  const classes = useLeftBarStyles({ drawerWidth, drawerBottomHeight, bottomBarOpen });
 
   const [combNodes, setCombNodes] = useState([])
   const [isZeroConf, setIsZeroConf] = useState(router.query.zeroconf || (typeof window !== 'undefined' && window.localStorage.getItem("wled-manager-zeroconf") === 'true') || false)
@@ -177,7 +185,7 @@ const LeftBar = () => {
       }
     }
   }, [])
-
+  console.log(audioSettings)
   return (<>
     <Head>
       <title>WLED Manager - by Blade</title>
@@ -191,13 +199,7 @@ const LeftBar = () => {
       classes={{ paper: clsx(classes.drawerPaper, classes.noselect, { [classes.contentBottomShift]: !bottomBarOpen }) }}
     >
       <div className={classes.drawerHeader}>
-        <div style={{ paddingLeft: '16px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="h6">
-            WLED Manager
-          </Typography>
-          <IconButton onClick={() => router.push('/home')} disabled style={{ color: '#333', padding: '3px', marginRight: '20px' }}>
-            <Settings />
-          </IconButton>
+        <div>
         </div>
         {singleMode && <Tooltip title={`No zeroconf (bonjour) is available, but if WLED is updated, discovery would be possible without zeroconf. You can go back and connect to a different WLED.`}>
           <Button onClick={() => router.push('/home')} variant="outlined" size="small" style={{ color: '#999', position: 'absolute', top: 80, left: 15, minWidth: 50, padding: '0 21px', flexGrow: 0, fontSize: 'xx-small' }}>
@@ -265,10 +267,10 @@ const LeftBar = () => {
           </div>
         </Card>
       </List>
-      <Divider />
+      {/* <Divider />
       <Button endIcon={bottomBarOpen ? <ArrowDownward /> : <ArrowUpward />} startIcon={<Equalizer />} onClick={() => setBottomBarOpen(!bottomBarOpen)} style={{ lineHeight: '17px' }}>
         WebAudio
-      </Button>
+      </Button> */}
       <Divider />
 
       <div style={{ height: 61, padding: '0 0.5rem' }}>
@@ -297,17 +299,39 @@ const LeftBar = () => {
       open={bottomBarOpen}
       classes={{ paper: classes.drawerBottomPaper }}
     >
-      <AudioDataContainer audioDeviceId={audioDevice} />
+      <div style={{ height: drawerBottomHeight === 350 ? 0 : 450, width: '100%' }}>
+
+
+        {drawerBottomHeight !== 350 && 'WebAudio settings'}
+
+
+      </div>
+      <AudioDataContainer audioDeviceId={audioDevice} fft={audioSettings.fft} bandCount={audioSettings.bands} />
     </Drawer>
 
     <main className={clsx(classes.content, classes.contentBottom, { [classes.contentShift]: !leftBarOpen }, { [classes.contentBottomShift]: !bottomBarOpen })}>
       <div onClick={() => setLeftBarOpen(!leftBarOpen)} className={clsx(classes.menuButton, { [classes.contentBottomShift]: !leftBarOpen })}>
         {/* <div onClick={() => setLeftBarOpen(!leftBarOpen)} style={{ flex: 1, minWidth: 'unset' }}> */}
-          {leftBarOpen ? <ChevronLeft /> : <ChevronRight />}
+        {leftBarOpen ? <ChevronLeft /> : <ChevronRight />}
         {/* </div> */}
       </div>
       <iframe src={`http://${iframe}/`} width="100%" height="100%" style={{ border: 0 }} />
     </main>
+
+    <div style={{ height: drawerBottomHeight === 350 ? 30 : 450, width: '100%' }} className={clsx(classes.barBottom, { [classes.barBottomShift]: !bottomBarOpen })}>
+      <div style={{ width: '100%', height: 30, backgroundColor: '#333', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transform: 'translateZ(0px)' }} onClick={() => {
+        if (bottomBarOpen && drawerBottomHeight !== 350) { setDrawerBottomHeight(350) }
+        return setBottomBarOpen(!bottomBarOpen)
+      }}>
+        <div style={{ padding: '0 5px', margin: '0 2px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          WebAudio
+        </div>
+        <div style={{ display: 'flex' }}>
+          {bottomBarOpen && <div style={{ padding: '0 5px', margin: '0 2px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); return setDrawerBottomHeight(drawerBottomHeight === 350 ? 800 : 350) }}>{drawerBottomHeight === 350 ? <Settings /> : <Close />}</div>}
+          <div style={{ padding: '0 5px', margin: '0 2px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{bottomBarOpen ? <ArrowDownward /> : <ArrowUpward />}</div>
+        </div>
+      </div>
+    </div>
   </>
   );
 };

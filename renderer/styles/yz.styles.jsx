@@ -1,9 +1,5 @@
 import { makeStyles } from '@material-ui/core/styles';
 
-const drawerWidth = 240
-const drawerBottomHeight = 350
-const drawerBottomHeightExtra = 'calc(100vh - 450px)'
-
 const useLeftBarStyles = makeStyles((theme) => ({
     '@global': {
         '*::-webkit-scrollbar': {
@@ -36,22 +32,24 @@ const useLeftBarStyles = makeStyles((theme) => ({
         flexShrink: 0,
         backgroundColor: '#111',
     },
-    drawerBottomPaper: {
-        height: drawerBottomHeight,
+    drawerBottomPaper: (props) => ({
+        height: props.drawerBottomHeight,
         overflow: 'hidden',
         backgroundColor: '#111',        
-    },
-    drawer: {
-        width: drawerWidth,
+    }),
+    drawer: (props) => ({
+        width: props.drawerWidth,
         flexShrink: 0,
         backgroundColor: '#111',
-    },
-    drawerPaper: {
-        width: drawerWidth,
+    }),
+    drawerPaper:(props) => ({
+        width: props.drawerWidth,
+        height: `calc(100% - ${!props.bottomBarOpen ? '30' : props.drawerBottomHeight+30}px )`,
         overflowX: 'hidden',
         backgroundColor: '#111',
-        paddingBottom: drawerBottomHeight,
-    },
+        transition: 'height 0.15s ease-in'
+        // paddingBottom: props.drawerBottomHeight,
+    }),
     drawerHeader: {
         display: 'flex',
         justifyContent: 'space-between',
@@ -59,7 +57,23 @@ const useLeftBarStyles = makeStyles((theme) => ({
         padding: 0,
         paddingTop: '30px',
         height: '99px',
+        '&&': {
+
+            minHeight: '99px',
+        },
         ...theme.mixins.toolbar,
+        '&>div': {
+            backgroundSize: '94%',
+            backgroundPosition: '-207% 42%',
+            backgroundRepeat: 'no-repeat',
+            paddingLeft: '16px',
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            backgroundImage: 'url(/images/logo.svg)'
+          }
     },
 
     activeView: {
@@ -71,9 +85,10 @@ const useLeftBarStyles = makeStyles((theme) => ({
         },
         color: '#fff',
     },
-    content: {
+    content: (props) =>({
         flexGrow: 1,
-        height: 'calc(100vh - 30px)',
+        zIndex: 0,
+        height: 'calc(100vh - 60px)',
         background: 'transparent',
         padding: 0,
         position: 'relative',
@@ -81,12 +96,12 @@ const useLeftBarStyles = makeStyles((theme) => ({
             easing: theme.transitions.easing.easeIn,
             duration: theme.transitions.duration.leavingScreen,
         }),
-        marginLeft: drawerWidth,
+        marginLeft: props.drawerWidth,
         '@media (max-width: 580px)': {
             padding: '8px',
         },
-    },
-    contentBottom: {
+    }),
+    contentBottom: (props)=> ({
         flexGrow: 1,
         background: 'transparent',
         padding: 0,
@@ -94,16 +109,25 @@ const useLeftBarStyles = makeStyles((theme) => ({
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
         }),
-        paddingBottom: drawerBottomHeight,
+        paddingBottom: props.drawerBottomHeight,
+    }),
+    barBottom: (props)=> ({
+        transition: theme.transitions.create('margin', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.leavingScreen,
+        }),
+        marginTop: -props.drawerBottomHeight,
+    }),
+    barBottomShift: {
+        transition: `${theme.transitions.create('margin', {
+            easing: theme.transitions.easing.easeOut,
+            duration: theme.transitions.duration.enteringScreen,
+        })} !important`,
+        marginTop: '0 !important',
     },
-    menuButton: {
-        // transition: theme.transitions.create('margin', {
-        //     easing: theme.transitions.easing.easeIn,
-        //     duration: theme.transitions.duration.leavingScreen,
-        // }),
-        // marginLeft: drawerWidth,
+    menuButton: (props)=> ({
         position: 'absolute',
-        top: 'calc((100% - 382px) / 2)',
+        top: `calc((100% - 32px - ${props.drawerBottomHeight}px) / 2)`,
         left: -1,
         width: 42,
         height: 42,
@@ -115,20 +139,20 @@ const useLeftBarStyles = makeStyles((theme) => ({
         cursor: 'pointer',
         borderLeft: '1px solid #111',
         zIndex: 1200,
-    },
+    }),
     contentShift: {
-        transition: theme.transitions.create('margin', {
+        transition: `${theme.transitions.create('margin', {
             easing: theme.transitions.easing.easeOut,
             duration: theme.transitions.duration.enteringScreen,
-        }),
-        marginLeft: 0,
+        })} !important`,
+        marginLeft: '0 !important',
     },
     contentBottomShift: {
-        transition: theme.transitions.create('padding', {
+        transition: `${theme.transitions.create('padding', {
             easing: theme.transitions.easing.easeOut,
             duration: theme.transitions.duration.enteringScreen,
-        }),
-        paddingBottom: 0,
+        })} !important`,
+        paddingBottom: '0 !important',
     },
 }));
 

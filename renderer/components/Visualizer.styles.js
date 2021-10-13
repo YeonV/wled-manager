@@ -56,7 +56,7 @@ const useVisualizerStyles = makeStyles(theme => ({
         position: 'absolute',
         left: '50%',
         top: '50%',
-        transform: 'translate(-50%, -50%)',
+        transform: 'translateX(-50%)',
         textAlign: 'center',
         color: '#444'
     }
