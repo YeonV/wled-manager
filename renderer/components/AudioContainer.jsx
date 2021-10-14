@@ -19,7 +19,6 @@ class AudioDataContainer extends React.Component {
             if (!this.audioContext || this.audioContext.state === 'closed') {
                 return
             }
-            console.log(this.audioContext)
             const source = this.audioContext.createMediaStreamSource(stream);
             const analyser = this.audioContext.createAnalyser();            
             analyser.fftSize = this.props.fft;
@@ -69,9 +68,12 @@ class AudioDataContainer extends React.Component {
         return (
             <div style={{ height: 255, position: 'relative' }}>
                 <Visualizer
+                    fft={this.props.fft}
+                    bandCount={this.props.bandCount}
+                    key={this.props.bandCount}
                     initializeAudioAnalyser={this.initializeAudioAnalyser}
                     audioContext={this.audioContext}
-                    frequencyBandArray={this.frequencyBandArray}
+                    frequencyBandArray={[...Array(this.props.bandCount).keys()]}
                     getFrequencyData={this.getFrequencyData}
                     refresh={() => {
                         if (this.audioContext && this.audioContext.state === 'running') {

@@ -5,7 +5,7 @@ import { remote } from 'electron';
 import { useRouter } from 'next/router';
 import { ipcRenderer } from 'electron';
 import { ArrowDownward, ArrowUpward, ChevronLeft, ChevronRight, Close, Equalizer, Refresh, Settings } from '@material-ui/icons';
-import { Drawer, List, Divider, Card, Typography, Button, IconButton, Tooltip } from '@material-ui/core';
+import { Drawer, List, Divider, Card, Typography, Button, IconButton, Tooltip, TextField } from '@material-ui/core';
 import useLeftBarStyles from '../styles/yz.styles';
 import { template } from '../components/MenuTemplate';
 import AudioDataContainer from '../components/AudioContainer';
@@ -36,11 +36,14 @@ const LeftBar = () => {
   // const fft = useStore(state => state.audioSettings.fft)
   // const bands = useStore(state => state.audioSettings.bands)
   const setAudioSettings = useStore(state => state.setAudioSettings)
+  const leftFb = useStore(state => state.leftFb)
+  const rightFb = useStore(state => state.rightFb)
   const classes = useLeftBarStyles({ drawerWidth, drawerBottomHeight, bottomBarOpen });
 
   const [combNodes, setCombNodes] = useState([])
   const [isZeroConf, setIsZeroConf] = useState(router.query.zeroconf || (typeof window !== 'undefined' && window.localStorage.getItem("wled-manager-zeroconf") === 'true') || false)
   const [singleMode, setSingleMode] = useState(router.query.singlemode || false)
+  const [error, setError] = useState("")
 
   useEffect(() => {
     const { Menu } = remote;
@@ -185,7 +188,7 @@ const LeftBar = () => {
       }
     }
   }, [])
-  console.log(audioSettings)
+  
   return (<>
     <Head>
       <title>WLED Manager - by Blade</title>
@@ -302,7 +305,32 @@ const LeftBar = () => {
       <div style={{ height: drawerBottomHeight === 350 ? 0 : 450, width: '100%' }}>
 
 
-        {drawerBottomHeight !== 350 && 'WebAudio settings'}
+        {drawerBottomHeight !== 350 && <>
+          <Typography style={{ paddingLeft: 40, paddingTop: 20 }} variant="h5">WebAudio settings</Typography>
+          <div style={{ padding: 20 }}>
+
+            <TextField label="FFT-size" error={error === "fft"} helperText={error === "fft" ? "[32,32768] and power of 2" : ""} size="small" type="number" min={32} max={32768} style={{ width: 120, margin: 10 }} variant="outlined" defaultValue={audioSettings.fft} onBlur={(e) => {
+              if ((parseInt(e.target.value) != 0) && ((parseInt(e.target.value) & (parseInt(e.target.value) - 1)) == 0) && (parseInt(e.target.value) >= 32) && (parseInt(e.target.value) <= 32768)) {
+                setAudioSettings({ fft: parseInt(e.target.value) });
+                setError("")
+              } else {
+                setError("fft")
+              }
+            }} />
+            <TextField label="Bands" error={error === "bands"} helperText={error === "bands" ? "min: 1" : ""} size="small" type="number" min={1} max={128} style={{ width: 120, margin: 10 }} variant="outlined" defaultValue={audioSettings.bands} onBlur={(e) => {
+              if (parseInt(e.target.value) > 0) {
+                setAudioSettings({ bands: parseInt(e.target.value) });
+                setError("")
+              } else {
+                setError("bands")
+              }
+            }} />
+            <TextField label="SampleRate" disabled size="small" type="number" style={{ width: 120, margin: 10 }} variant="outlined" defaultValue={audioSettings.sampleRate} />
+            <TextField label="Left FB" helperText="via left-click" disabled size="small" style={{ width: 120, margin: 10 }} variant="outlined" value={leftFb !== -1 ? leftFb : 'unset'} />
+            <TextField label="Right FB" helperText="via right-click" disabled size="small" style={{ width: 120, margin: 10 }} variant="outlined" value={rightFb !== -1 ? rightFb : 'unset'} />
+          </div>
+        </>
+        }
 
 
       </div>

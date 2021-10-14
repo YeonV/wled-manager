@@ -69,7 +69,9 @@ export default function Visualizer({
     initializeAudioAnalyser,
     stop,
     refresh,
-    audioContext
+    audioContext,
+    fft,
+    bandCount
 }) {
 
     const classes = useVisualizerStyles();
@@ -85,6 +87,9 @@ export default function Visualizer({
     const setColor = useStore(state => state.setColor)
     const bgColor = useStore(state => state.bgColor)
     const setBgColor = useStore(state => state.setBgColor)
+    const setAudioSettings = useStore(state => state.setAudioSettings)
+    const setLeftFb = useStore(state => state.setLeftFb)
+    const setRightFb = useStore(state => state.setRightFb)
 
     const [activeFb, setActiveFb] = useState(-1)
     const [activeRightFb, setActiveRightFb] = useState(-1)
@@ -144,8 +149,10 @@ export default function Visualizer({
             if (domElements.length > 0) {
                 for (let i = 0; i < frequencyBandArray.length; i++) {
                     let num = frequencyBandArray[i]
-                    domElements[num].style.backgroundColor = `rgb(${color.r}, ${color.g}, ${color.b})`
-                    domElements[num].style.height = `${amplitudeValues.current[num]}px`
+                    if (domElements[num]) {
+                        domElements[num].style.backgroundColor = `rgb(${color.r}, ${color.g}, ${color.b})`
+                        domElements[num].style.height = `${amplitudeValues.current[num]}px`
+                    }
                 }
                 if (activeFb > -1) {
                     const ledDataPrefix = [2, 1];
@@ -243,11 +250,20 @@ export default function Visualizer({
             setTimeout(() => {
                 initializeAudioAnalyser()
                 requestAnimationFrame(runSpectrum)
-            }, 100)
+            }, 100)           
         }
+        setLeftFb(activeFb)
+        setRightFb(activeRightFb)
     }, [color, bgColor, flipped, innerVolume, activeFb, activeRightFb])
 
     useEffect(() => {
+        handleStopButtonClick()
+    }, [fft, bandCount])
+
+    useEffect(() => {
+        setAudioSettings({
+            sampleRate: audioContext.sampleRate
+        })
         navigator.mediaDevices.enumerateDevices()
             .then(function (adevices) {
                 setAudioDevices(adevices)

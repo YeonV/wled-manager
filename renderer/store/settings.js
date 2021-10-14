@@ -26,11 +26,22 @@ const storeSettings = (set, get) => ({
     })),
 
     audioSettings: {
-        fft: 4096,
-        bands: 64
+        fft: 2048,
+        bands: 64,
+        sampleRate: 48000
     },
     setAudioSettings: (config) => set((state) => ({
-        ...state, ...config
+        audioSettings: {...state.audioSettings, ...config}
+    })),
+    
+    leftFb: -1,
+    setLeftFb: (config) => set((state) => ({
+        leftFb: config
+    })),
+
+    rightFb: -1,
+    setRightFb: (config) => set((state) => ({
+        rightFb: config
     })),
 
     color: { r: 0, g: 255, b: 179 },
