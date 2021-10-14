@@ -5,7 +5,7 @@ import { PlayArrow, Stop } from '@material-ui/icons';
 import { Button, MenuItem, TextField, Typography, Paper, Box, Slider } from '@material-ui/core';
 import ColorPicker from './ColorPicker';
 import useStore from '../store/store';
-import Effect, { effects } from '../effects';
+import Effect, { effects } from '../effects/effects';
 import Toggle from './Toggle';
 import useVisualizerStyles from './Visualizer.styles';
 
@@ -95,7 +95,7 @@ export default function Visualizer({
     const [activeRightFb, setActiveRightFb] = useState(-1)
     const [playing, setPlaying] = useState(false)
     const [flipped, setFlipped] = useState(false)
-    const [effect, setEffect] = useState("BladePower")
+    const [effect, setEffect] = useState("BladePower (Left FB)")
     const [volume, setVolume] = useState(0)
     const [innerVolume, setInnerVolume] = useState(0)
 
@@ -165,6 +165,7 @@ export default function Visualizer({
                             color,
                             bgColor,
                             activeFb,
+                            activeRightFb,
                             volume: volume
                         }
                     })
@@ -316,7 +317,15 @@ export default function Visualizer({
                         label="Effect"
                         value={effect}
                         style={{ width: '50%' }}
-                        onChange={(e) => { setEffect(e.target.value) }}
+                        onChange={(e) => { 
+                            if (e.target.value === 'BladeWave (Range)') {
+                                setBgColor({r: 0, g: 0, b:0})
+                            }
+                            if (e.target.value === 'BladePower (Left FB)') {
+                                setActiveRightFb(-1)
+                            }
+                            setEffect(e.target.value) 
+                        }}
                     >
                         {effects.map((d, i) =>
                             <MenuItem key={d} value={d}>
@@ -327,7 +336,7 @@ export default function Visualizer({
                 </div>
                 <div style={{ display: 'flex', paddingTop: 10 }}>
                     <ColorPicker label="COL" color={color} onChange={settingColor} />
-                    {effect !== "BladeWave (Test)" &&
+                    {effect !== "BladeWave (Range)" &&
                         <ColorPicker label="BG" color={bgColor} onChange={settingBgColor} />
                     }
                     <Toggle label="Flip" value={flipped} setValue={settingFlipped} />
