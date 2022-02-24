@@ -302,12 +302,12 @@ const LeftBar = () => {
       open={bottomBarOpen}
       classes={{ paper: classes.drawerBottomPaper }}
     >
-      <div style={{ height: drawerBottomHeight === 350 ? 0 : 450, width: '100%' }}>
+      <div style={{ height: drawerBottomHeight === 350 ? 0 : 50, width: '100%' }}>
 
 
         {drawerBottomHeight !== 350 && <>
           <Typography style={{ paddingLeft: 40, paddingTop: 20 }} variant="h5">WebAudio settings</Typography>
-          <div style={{ padding: 20 }}>
+          <div style={{ padding: 20, display: 'flex', flexDirection: 'column' }}>
 
             <TextField label="FFT-size" error={error === "fft"} helperText={error === "fft" ? "[32,32768] and power of 2" : ""} size="small" type="number" min={32} max={32768} style={{ width: 120, margin: 10 }} variant="outlined" defaultValue={audioSettings.fft} onBlur={(e) => {
               if ((parseInt(e.target.value) != 0) && ((parseInt(e.target.value) & (parseInt(e.target.value) - 1)) == 0) && (parseInt(e.target.value) >= 32) && (parseInt(e.target.value) <= 32768)) {
@@ -334,7 +334,7 @@ const LeftBar = () => {
 
 
       </div>
-      <AudioDataContainer audioDeviceId={audioDevice} fft={audioSettings.fft} bandCount={audioSettings.bands} />
+      <AudioDataContainer audioDeviceId={audioDevice} fft={audioSettings.fft} bandCount={audioSettings.bands} drawerBottomHeight={drawerBottomHeight} />
     </Drawer>
 
     <main className={clsx(classes.content, classes.contentBottom, { [classes.contentShift]: !leftBarOpen }, { [classes.contentBottomShift]: !bottomBarOpen })}>

@@ -275,7 +275,7 @@ export default function Visualizer({
     }, [])
 
     return (
-        <div>
+        <div style={{ position: 'relative'}}>
             <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', flex: 1, paddingTop: 10 }}>
                     <Button
