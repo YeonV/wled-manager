@@ -1,7 +1,6 @@
 import { getMultipleGradientSteps } from "./utils"
 
-const GradientRolling = ({ ampValues, pixel_count, color, bgColor, activeFb, volume, timeStarted, gcolor }) => {  
-    console.log("EYY")     
+const GradientRolling = ({ ampValues, pixel_count, color, bgColor, activeFb, volume, timeStarted, gcolor }) => {   
     const tmp = getMultipleGradientSteps(gcolor.match(/rgb\([^()]*\)|#\w+/g).map(c=>c.match(/\d+/g)), pixel_count)
     let speed = 8
 
