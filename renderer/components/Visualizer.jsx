@@ -78,6 +78,8 @@ export default function Visualizer({
     const theme = useTheme();
     const amplitudeValues = useRef(null);
     const timeStarted = useRef(null);
+    const lastShift = useRef(null);
+    const lastAudio = useRef(null);
 
     const device = useStore(state => state.device)
     const audioDevice = useStore(state => state.audioDevice)
@@ -88,6 +90,8 @@ export default function Visualizer({
     const setColor = useStore(state => state.setColor)
     const bgColor = useStore(state => state.bgColor)
     const setBgColor = useStore(state => state.setBgColor)
+    const gcolor = useStore(state => state.gcolor)
+    const setGcolor = useStore(state => state.setGcolor)
     const setAudioSettings = useStore(state => state.setAudioSettings)
     const setLeftFb = useStore(state => state.setLeftFb)
     const setRightFb = useStore(state => state.setRightFb)
@@ -96,9 +100,9 @@ export default function Visualizer({
     const [activeRightFb, setActiveRightFb] = useState(-1)
     const [playing, setPlaying] = useState(false)
     const [flipped, setFlipped] = useState(false)
-    const [effect, setEffect] = useState("BladePower (Left FB)")
+    const [effect, setEffect] = useState("Power (Left FB)")
     const [volume, setVolume] = useState(0)
-    const [innerVolume, setInnerVolume] = useState(0)
+    const [innerVolume, setInnerVolume] = useState(0)    
 
     const settingColor = (clr) => {
         setColor(clr)
@@ -111,6 +115,14 @@ export default function Visualizer({
         if (playing) {
             refresh()
         }
+    }
+    const settingGcolor = (clr) => {
+        setGcolor(clr)
+        if (playing) {
+            console.log("refreshing")           
+            handleStopButtonClick()
+        } 
+        
     }
 
     const settingFlipped = (flp) => {
@@ -164,10 +176,13 @@ export default function Visualizer({
                             pixel_count: device.pixel_count,
                             color,
                             bgColor,
+                            gcolor,
                             activeFb,
                             activeRightFb,
                             volume: volume,
-                            timeStarted: timeStarted.current
+                            timeStarted: timeStarted,
+                            lastShift,
+                            lastAudio
                         }
                     })
                     // console.log(ledData)
@@ -295,7 +310,7 @@ export default function Visualizer({
                 console.log(err.name + ": " + err.message);
             })
     }, [])
-
+  
     return (
         <div>
             <div style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -357,10 +372,12 @@ export default function Visualizer({
                     </TextField>
                 </div>
                 <div style={{ display: 'flex', paddingTop: 10 }}>
-                    <ColorPicker label="COL" color={color} onChange={settingColor} />
-                    {effect !== "BladeWave (Range)" &&
+                    {effect.indexOf("radient") === -1 &&
+                        <ColorPicker label="COL" color={color} onChange={settingColor} />}
+                    {effect !== "BladeWave (Range)" && effect.indexOf("radient") === -1 &&
                         <ColorPicker label="BG" color={bgColor} onChange={settingBgColor} />
                     }
+                    {effect.indexOf("radient") > -1 && <ColorPicker label="GR" color={gcolor} onChange={settingGcolor} gradient />}
                     <Toggle label="Flip" value={flipped} setValue={settingFlipped} />
                 </div>
             </div>
@@ -394,7 +411,7 @@ export default function Visualizer({
                                 : (activeFb === num || activeRightFb === num)
                                     ? 'selected'
                                     : ''}`}
-                            style={{ backgroundColor: `rgb(${color.r}, ${color.g}, ${color.b})`, padding: `calc(100vw / ${(frequencyBandArray.length) * 4} )` }}
+                            style={{ background: `rgb(${color.r}, ${color.g}, ${color.b})`, padding: `calc(100vw / ${(frequencyBandArray.length) * 4} )` }}
                             elevation={4}
                             id={num}
                             key={num}

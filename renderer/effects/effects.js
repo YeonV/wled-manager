@@ -47,22 +47,41 @@ const Power = ({ ampValues, pixel_count, color, bgColor, activeFb, volume }) =>
         : null
 
 
-const GradientStatic = ({ ampValues, pixel_count, color, bgColor, activeFb, volume, timeStarted }) => 
-    getMultipleGradientSteps([[255,0,0],[0,255,0],[0,255,255],[0,0,255], [255,0,0]], pixel_count)
+const GradientStatic = ({ ampValues, pixel_count, color, bgColor, activeFb, volume, timeStarted, gcolor }) => 
+    getMultipleGradientSteps(gcolor.match(/rgb\([^()]*\)|#\w+/g).map(c=>c.match(/\d+/g)), pixel_count)
 
-const GradientRolling = ({ ampValues, pixel_count, color, bgColor, activeFb, volume, timeStarted }) => {
-    const tmp = getMultipleGradientSteps([[255,0,0],[0,255,0],[0,255,255],[0,0,255], [255,0,0]], pixel_count)
+const GradientRolling = ({ ampValues, pixel_count, color, bgColor, activeFb, volume, timeStarted, gcolor }) => {       
+    const tmp = getMultipleGradientSteps(gcolor.match(/rgb\([^()]*\)|#\w+/g).map(c=>c.match(/\d+/g)), pixel_count)
     let speed = 8
     const sliceA = tmp.slice(0,parseInt(((performance.now() - timeStarted)/speed) )% pixel_count)
     const sliceB = tmp.slice(parseInt(((performance.now() - timeStarted)/speed) )% pixel_count)
     return [...sliceB, ...sliceA]
 }
 
-const GradientAudio = ({ ampValues, pixel_count, color, bgColor, activeFb, volume, timeStarted }) => {
-    const tmp = getMultipleGradientSteps([[255,0,0],[0,255,0],[0,255,255],[0,0,255], [255,0,0]], pixel_count)
-    let speed = (ampValues[activeFb] - volume * 2.55) > 0 ? 6 : 32
-    const sliceA = tmp.slice(0,parseInt(((performance.now() - timeStarted)/speed) )% pixel_count)
-    const sliceB = tmp.slice(parseInt(((performance.now() - timeStarted)/speed) )% pixel_count)
+const GradientAudio = ({ ampValues, pixel_count, color, bgColor, activeFb, volume, timeStarted, gcolor, lastShift, lastAudio }) => {
+    // const a = gcolor.match(/rgb\([^()]*\)|#\w+/g).map(c=>c.match(/\d+/g))
+    
+    // console.log(a)
+    
+    let tmp = getMultipleGradientSteps(gcolor.match(/rgb\([^()]*\)|#\w+/g).map(c=>c.match(/\d+/g)), pixel_count)
+    let audio = (ampValues[activeFb] - volume * 2.55) > 0
+    let speed =  audio ? 64 : 512
+    
+    if (lastShift.current) {
+        const slicePreA = tmp.slice(0,lastShift.current)
+        const slicePreB = tmp.slice(lastShift.current)
+        tmp = [...slicePreB, ...slicePreA]
+        if (audio !== lastAudio.current) {
+            timeStarted.current = performance.now()
+            lastAudio.current = audio
+        }
+    }
+    
+    const shift = parseInt(((performance.now() - timeStarted.current)/speed) )% pixel_count
+    // console.log(shift)
+    const sliceA = tmp.slice(0,shift)
+    const sliceB = tmp.slice(shift)
+    lastShift.current = shift
     return [...sliceB, ...sliceA]
 }
 
