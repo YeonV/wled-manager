@@ -1,12 +1,15 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Visualizer from './Visualizer';
+// import aubio from 'aubiojs';
 
-const AudioDataContainer = ({ audioDeviceId, fft, bandCount }) => {
+const AudioDataContainer = ({ audioDeviceId, fft, bandCount, drawerBottomHeight }) => {
   const [frequencyBandArray] = useState([...Array(bandCount).keys()]);
   const audioData = useRef(null);
   const audioContext = useRef(new AudioContext());
   const theStream = useRef(null);
   const theGain = useRef(null);
+  // const theTempo = useRef(null);
+  // const theAubio = useRef(null);
 
   const initializeAudioAnalyser = () => {
     getMedia(audioDeviceId).then((stream) => {
@@ -16,11 +19,47 @@ const AudioDataContainer = ({ audioDeviceId, fft, bandCount }) => {
       }
       const source = audioContext.current.createMediaStreamSource(stream);
       const analyser = audioContext.current.createAnalyser();
+
+      // const scriptProcessor = audioContext.current.createScriptProcessor(
+      //   1024,
+      //   1,
+      //   1
+      // );
+      // const buf = audioContext.current.createBuffer(1, 1024, audioCtx.sampleRate);
+      // if (theTempo.current) {
+      //   if (theTempo.current.do(buf.getChannelData(0))) {
+      //     console.log('confidence', theTempo.current.getConfidence());
+      //     beat(theTempo.current.getBpm());
+      //   }
+      // }
+      // console.log("WTF0", scriptProcessor)
+      // scriptProcessor.onaudioprocess = (event) => {
+      //   console.log("WTF", event)
+      //   if (theTempo.current) {
+      //     if (theTempo.current.do(event.inputBuffer.getChannelData(0))) {
+      //       console.log('confidence', theTempo.current.getConfidence());
+      //       beat(theTempo.current.getBpm());
+      //     }
+      //   }
+      // scriptProcessor.addEventListener('audioprocess', function (event) {
+      //   console.log("WTF", event)
+      //   if (theTempo.current) {
+      //     if (theTempo.current.do(event.inputBuffer.getChannelData(0))) {
+      //       console.log('confidence', theTempo.current.getConfidence());
+      //       beat(theTempo.current.getBpm());
+      //     }
+      //   }
+      // }
+      // );
+      // }
+
+      
       analyser.fftSize = fft;
       const gain = audioContext.current.createGain();
       theGain.current = gain.gain;
       source.connect(gain);
       gain.connect(analyser);
+      // source.connect(scriptProcessor);
       audioData.current = analyser;
     });
   };
@@ -68,8 +107,17 @@ const AudioDataContainer = ({ audioDeviceId, fft, bandCount }) => {
     }
   };
 
+  // useEffect(() => {
+  //   const init = async () => {
+  //     const { Tempo } = await aubio();
+  //     const tempo = new Tempo(4096, 1024, audioContext.current.sampleRate);
+  //     theTempo.current = tempo;
+  //     console.log("YZ2", theTempo.current)
+  //   };
+  //   init();
+  // }, []);
   return (
-    <div style={{ height: 255, position: 'relative' }}>
+    <div style={{ height: 255, position: 'relative', top: drawerBottomHeight === 800 ? 390 : 0 }}>
       <Visualizer
         fft={fft}
         bandCount={bandCount}

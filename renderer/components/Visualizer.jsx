@@ -77,6 +77,7 @@ export default function Visualizer({
     const classes = useVisualizerStyles();
     const theme = useTheme();
     const amplitudeValues = useRef(null);
+    const timeStarted = useRef(null);
 
     const device = useStore(state => state.device)
     const audioDevice = useStore(state => state.audioDevice)
@@ -156,7 +157,6 @@ export default function Visualizer({
                 }
                 if (activeFb > -1) {
                     const ledDataPrefix = [2, 1];
-
                     const ledData = Effect({
                         type: effect,
                         config: {
@@ -166,13 +166,31 @@ export default function Visualizer({
                             bgColor,
                             activeFb,
                             activeRightFb,
-                            volume: volume
+                            volume: volume,
+                            timeStarted: timeStarted.current
                         }
                     })
                     // console.log(ledData)
+                    // const header = "VER_YZ"
+                    // const myVals = "00000000000000000000000000000000"
+                    // const sampleAvc = "0001"
+                    // const sample = "0001"
+                    // const sampleAvg = "0001"
+                    // const samplePeak = "1"
+                    // const fftResult = "0000000000000000"
+                    // const FFT_Magnitude = "00000000"
+                    // const FFT_MajorPeak = "00000000"
+
+                    // ledData && ledData.length > 1 && ipcRenderer.send('UDPSR', [{ ip: device.ip }, 
+                    //     `${header}${myVals}${sampleAvc}${sample}${sampleAvg}${samplePeak}${fftResult}${FFT_Magnitude}${FFT_MajorPeak}`])
+
                     ledData && ledData.length > 1 && ipcRenderer.send('UDP', [{ ip: device.ip }, flipped
                         ? [...ledDataPrefix, ...ledData.reverse().flat()]
                         : [...ledDataPrefix, ...ledData.flat()]])
+
+                    // ledData && ledData.length > 1 && ipcRenderer.send('UDP', [{ ip: device.ip }, (amplitudeValues.current[activeFb] - volume * 2.55) > 0
+                    //     ? [...ledDataPrefix, ...tmp.reverse().flat()]
+                    //     : [...ledDataPrefix, ...tmp.flat()]])
                 }
             }
         }
@@ -187,6 +205,8 @@ export default function Visualizer({
 
     function handleStartButtonClick() {
         ipcRenderer.send('UDP-start')
+        // ipcRenderer.send('UDPSR-start')
+        timeStarted.current = performance.now();
         setPlaying(true)
         initializeAudioAnalyser()
         requestAnimationFrame(runSpectrum)
@@ -195,6 +215,8 @@ export default function Visualizer({
     function handleStopButtonClick() {
         setPlaying(false)
         ipcRenderer.send('UDP-stop')
+        console.log(performance.now() - timeStarted.current)
+        // ipcRenderer.send('UDPSR-stop')
         if (frequencyBandArray.length > 0) {
             let domElements = frequencyBandArray.map((num) =>
                 document.getElementById(num))
@@ -275,7 +297,7 @@ export default function Visualizer({
     }, [])
 
     return (
-        <div style={{ position: 'relative'}}>
+        <div>
             <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', flex: 1, paddingTop: 10 }}>
                     <Button
