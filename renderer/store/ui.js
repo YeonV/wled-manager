@@ -16,6 +16,10 @@ const storeUI = (set, get) => ({
     setBottomBarOpen: (data) => set(() => ({
         bottomBarOpen: data
     })),
+    virtualView: false,
+    setVirtualView: (open) => set(() => ({
+        virtualView: open
+    })),
 
 
 })

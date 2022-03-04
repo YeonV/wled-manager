@@ -4,7 +4,7 @@ import useClickOutside from '../lib/useClickOutside';
 import ReactGPicker from 'react-gcolor-picker';
 import useStyles from '../styles/GradientPicker.styles';
 
-const ColorPicker = ({ color, onChange, disabled, label, gradient }) => {
+const ColorPicker = ({ color, onChange, disabled, label, gradient,setDrawerBottomHeight }) => {
   const popover = useRef();
   const classes = useStyles()
   const [isOpen, toggle] = useState(false);
@@ -46,7 +46,10 @@ const ColorPicker = ({ color, onChange, disabled, label, gradient }) => {
           cursor: 'pointer',
           background: gradient ? color : `rgb(${color.r}, ${color.g}, ${color.b})`,
         }}
-        onClick={() => toggle(true)}>
+        onClick={() => {
+          setDrawerBottomHeight(800)
+          toggle(true)
+          }}>
         <span
           style={{
             textShadow:

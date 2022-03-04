@@ -10,6 +10,8 @@ import useLeftBarStyles from '../styles/yz.styles';
 import { template } from '../components/MenuTemplate';
 import AudioDataContainer from '../components/AudioContainer';
 import useStore from '../store/store';
+import AddVirtual from '../components/AddVirtual';
+import AddSegment from '../components/AddSegment';
 
 const LeftBar = () => {
   if (typeof window === 'undefined') {
@@ -28,6 +30,10 @@ const LeftBar = () => {
   const setDevices = useStore(state => state.setDevices)
   const device = useStore(state => state.device)
   const setDevice = useStore(state => state.setDevice)
+  const virtuals = useStore(state => state.virtuals)
+  const setVirtuals = useStore(state => state.setVirtuals)
+  const virtual = useStore(state => state.virtual)
+  const setVirtual = useStore(state => state.setVirtual)
   const audioDevice = useStore(state => state.audioDevice)
   const setDrawerBottomHeight = useStore(state => state.setDrawerBottomHeight)
   const drawerWidth = useStore(state => state.drawerWidth)
@@ -44,6 +50,41 @@ const LeftBar = () => {
   const [isZeroConf, setIsZeroConf] = useState(router.query.zeroconf || (typeof window !== 'undefined' && window.localStorage.getItem("wled-manager-zeroconf") === 'true') || false)
   const [singleMode, setSingleMode] = useState(router.query.singlemode || false)
   const [error, setError] = useState("")
+
+  const virtualView = useStore(state => state.virtualView)
+  const setVirtualView = useStore(state => state.setVirtualView)
+  const removeVirtual = useStore(state => state.removeVirtual)
+  const addVirtual = useStore(state => state.addVirtual)
+
+  const openVirtual = (virtual) => {
+    setVirtualView(virtual.name)
+  }
+
+  const handleRemoveVirtual = (v) => {
+    if (v.name === virtualView) {
+      setVirtualView(false)
+    }
+    removeVirtual(v)
+  };
+  const handleSegments = (segs) => {
+    addVirtual({
+      name: virtual.name,
+      type: 'span',
+      pixel_count: 0,
+      seg: [...virtual.seg || [], segs]
+    });
+  };
+  const removeSeg = (i) => {
+    const segs = [ ...virtual.seg ]
+    segs.splice(i, 1)
+
+    addVirtual({
+      name: virtual.name,
+      type: 'span',
+      pixel_count: 0,
+      seg: [...segs ]
+    });
+  };
 
   useEffect(() => {
     const { Menu } = remote;
@@ -62,8 +103,29 @@ const LeftBar = () => {
   }, []);
 
   useEffect(() => {
+    setVirtual(virtuals.find(v=>v.name === virtualView))
+  }, [virtualView, virtuals])
+
+
+  useEffect(() => {
+    virtuals.map(v=>{      
+      if (v.seg && v.seg.length) {
+        v.pixel_count = v.seg.map(s=>(s.seg && s.seg.length) ? s.seg[1] - s.seg[0] : 0).reduce((a,b)=>a+b)
+      }
+      return v
+    })
+  }, [virtuals])
+
+  useEffect(() => {
     ipcRenderer.send('resize-me-please', [1024, 1080])
   }, [])
+
+  // useEffect(() => {
+  //   const virt = virtuals.find(v => v.name === virtualView)
+  //   if (virt) {
+  //     setVirtual(virt)
+  //   }
+  // }, [virtuals, virtualView])
 
   useEffect(() => {
     if (router.query && router.query.zeroconf) {
@@ -109,25 +171,27 @@ const LeftBar = () => {
         if (service.referer && service.referer.address) {
           if ((!combNodes.filter(n => n.ip === service.referer.address).length > 0) || (!devices.filter(n => n.ip === service.referer.address).length)) {
             console.log("wled found:", service.name)
-            await fetch(`http://${service.referer.address}/json/info`)
+            await fetch(`http://${service.referer.address}/json`)
               .then(r => r.json())
               .then((re) => {
                 if (!combNodes.filter(n => n.ip === service.referer.address).length > 0) {
                   setCombNodes((comb) => [...comb, {
                     "name": service.name,
-                    "type": re.arch === "esp8266" ? 82 : 32,
+                    "type": re.info.arch === "esp8266" ? 82 : 32,
                     "ip": service.referer.address,
-                    "vid": re.vid,
-                    "pixel_count": re.leds.count
+                    "vid": re.info.vid,
+                    "pixel_count": re.info.leds.count,
+                    "seg": re.state.seg
                   }])
                 }
                 if (!devices.filter(n => n.ip === service.referer.address).length) {
                   setDevices([...devices, {
                     "name": service.name,
-                    "type": re.arch === "esp8266" ? 82 : 32,
+                    "type": re.info.arch === "esp8266" ? 82 : 32,
                     "ip": service.referer.address,
-                    "vid": re.vid,
-                    "pixel_count": re.leds.count
+                    "vid": re.info.vid,
+                    "pixel_count": re.info.leds.count,
+                    "seg": re.state.seg
                   }])
                 }
               })
@@ -147,25 +211,27 @@ const LeftBar = () => {
             res.nodes.forEach((node) => {
               if ((!combNodes.filter(n => n.ip === node.ip).length > 0) || (!devices.filter(n => n.ip === node.ip).length)) {
                 console.log("wled found:", node)
-                fetch(`http://${node.ip}/json/info`)
+                fetch(`http://${node.ip}/json`)
                   .then(r => r.json())
                   .then((re) => {
                     if (!combNodes.filter(n => n.ip === node.ip).length > 0) {
                       setCombNodes((comb) => [...comb, {
                         "name": node.name,
-                        "type": re.arch === "esp8266" ? 82 : 32,
+                        "type": re.info.arch === "esp8266" ? 82 : 32,
                         "ip": node.ip,
-                        "vid": re.vid,
-                        "pixel_count": re.leds.count
+                        "vid": re.info.vid,
+                        "pixel_count": re.info.leds.count,
+                        "seg": re.state.seg
                       }])
                     }
                     if (!devices.filter(n => n.ip === node.ip).length) {
                       setDevices([...devices, {
                         "name": node.name,
-                        "type": re.arch === "esp8266" ? 82 : 32,
+                        "type": re.info.arch === "esp8266" ? 82 : 32,
                         "ip": node.ip,
-                        "vid": re.vid,
-                        "pixel_count": re.leds.count
+                        "vid": re.info.vid,
+                        "pixel_count": re.info.leds.count,
+                        "seg": re.state.seg
                       }])
                     }
                   })
@@ -188,7 +254,8 @@ const LeftBar = () => {
       }
     }
   }, [])
-  
+
+   
   return (<>
     <Head>
       <title>WLED Manager - by Blade</title>
@@ -226,7 +293,8 @@ const LeftBar = () => {
           <Card key={i} onClick={() => {
             setIframe(combNodes[i].ip)
             setDevice(combNodes[i])
-          }} style={{ cursor: 'pointer', margin: '0.5rem', padding: '0.5rem 0.25rem 0.5rem 0.5rem', background: combNodes[i].ip === iframe ? '#404040' : '#202020' }}>
+            setVirtualView(false)
+          }} style={{ cursor: 'pointer', margin: '0.5rem', padding: '0.5rem 0.25rem 0.5rem 0.5rem', background: (combNodes[i].ip === iframe && !virtualView) ? '#404040' : '#202020' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography style={{ color: "#fff", fontSize: '1rem', maxWidth: 150, overflowX: 'hidden', whiteSpace: 'nowrap' }}>
                 {combNodes[i].name}
@@ -249,26 +317,27 @@ const LeftBar = () => {
           </Typography>
         </div>
         <Divider />
-        <Card key={"test1"} style={{ cursor: 'pointer', margin: '0.5rem', padding: '0.5rem 0.25rem 0.5rem 0.5rem', background: '#202020' }}>
+        {virtuals.length > 0 && virtuals.map((v, i) => (
+
+        <Card key={i} onContextMenu={()=>handleRemoveVirtual(v)} onClick={() => {
+          openVirtual(v)
+        }} style={{ cursor: 'pointer', margin: '0.5rem', padding: '0.5rem 0.25rem 0.5rem 0.5rem', background: virtualView === v.name ? '#404040' : '#202020' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography style={{ color: "#fff", fontSize: '1rem' }}>
-              Dummy Virtual 1
+            <Typography style={{ color: "#fff", fontSize: '1rem', maxWidth: 150, overflowX: 'hidden', whiteSpace: 'nowrap' }}>
+              {virtuals[i].name}
             </Typography>
-            <Button disabled variant="outlined" size="small" style={{ padding: '0', flexGrow: 0, fontSize: 'xx-small' }}>
-              span
-            </Button>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <Button disabled variant="outlined" size="small" style={{ minWidth: 50, padding: '0', flexGrow: 0, fontSize: 'xx-small' }}>
+                {virtuals[i].type}
+              </Button>
+              <Button disabled variant="outlined" size="small" style={{ minWidth: 50, padding: '0', flexGrow: 0, fontSize: 'xx-small' }}>
+                {virtuals[i].pixel_count} Leds
+              </Button>
+            </div>
           </div>
         </Card>
-        <Card key={"test2"} style={{ cursor: 'pointer', margin: '0.5rem', padding: '0.5rem 0.25rem 0.5rem 0.5rem', background: '#202020' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography style={{ color: "#fff", fontSize: '1rem' }}>
-              Dummy Virtual 2
-            </Typography>
-            <Button disabled variant="outlined" size="small" style={{ padding: '0', flexGrow: 0, fontSize: 'xx-small' }}>
-              copy
-            </Button>
-          </div>
-        </Card>
+        ))}
+        <AddVirtual devices={combNodes} />
       </List>
       {/* <Divider />
       <Button endIcon={bottomBarOpen ? <ArrowDownward /> : <ArrowUpward />} startIcon={<Equalizer />} onClick={() => setBottomBarOpen(!bottomBarOpen)} style={{ lineHeight: '17px' }}>
@@ -343,7 +412,26 @@ const LeftBar = () => {
         {leftBarOpen ? <ChevronLeft /> : <ChevronRight />}
         {/* </div> */}
       </div>
-      <iframe src={`http://${iframe}/`} width="100%" height="100%" style={{ border: 0 }} />
+      {virtualView ? <div style={{width: '100%', height: '100%' }}>
+        <div style={{width: '100%', height: 69, borderBottom: '1px solid #333' }}>
+          <Typography style={{ paddingLeft: 40, paddingTop: 20 }} variant="h5">{virtualView}</Typography>
+        </div>
+        <div style={{width: '100%', height: '100%', padding: 40 }}>
+          {virtual && virtual.seg && virtual.seg.length && virtual.seg.map((s,i)=>
+            <Card onContextMenu={()=>removeSeg(i)} key={i} style={{ cursor: 'pointer', margin: '0.5rem', padding: '0.5rem 0.25rem 0.5rem 0.5rem', background: '#202020' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography style={{ color: "#fff", fontSize: '1rem', overflowX: 'hidden', whiteSpace: 'nowrap' }}>
+                  {`${s.device} - ${s.name}`}
+                </Typography>
+                <Button disabled variant="outlined" size="small" style={{ minWidth: 100, padding: '0', flexGrow: 0,  }}>
+                  {s.seg?.[1] - s.seg?.[0]} Leds
+                </Button>
+              </div>
+            </Card>        
+          )}          
+          <AddSegment devices={combNodes} handleSegments={handleSegments} />
+        </div>
+      </div> : <iframe src={`http://${iframe}/`} width="100%" height="100%" style={{ border: 0 }} />}
     </main>
 
     <div style={{ height: drawerBottomHeight === 350 ? 30 : 450, width: '100%' }} className={clsx(classes.barBottom, { [classes.barBottomShift]: !bottomBarOpen })}>

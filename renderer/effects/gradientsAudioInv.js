@@ -1,4 +1,4 @@
-import { getMultipleGradientSteps } from "./utils"
+import { getMultipleGradientStepsInverted } from "./utils"
 
 let shift = 0;
 
@@ -10,8 +10,8 @@ export const shifting = (pixel_count) => {
     }
 }
 
-const GradientAudio = ({ ampValues, pixel_count, color, bgColor, activeFb, volume, timeStarted, gcolor, lastShift, lastAudio }) => {
-    let tmp = getMultipleGradientSteps(gcolor.match(/rgb\([^()]*\)|#\w+/g).map(c=>c.match(/\d+/g)), pixel_count)    
+const GradientAudioInv = ({ ampValues, pixel_count, color, bgColor, activeFb, volume, timeStarted, gcolor, lastShift, lastAudio }) => {
+    let tmp = getMultipleGradientStepsInverted(gcolor.match(/rgb\([^()]*\)|#\w+/g).map(c=>c.match(/\d+/g)), pixel_count)    
     let audio = (ampValues[activeFb] - volume * 2.55) > 0
     let speed =  audio ? 0 : 5
        
@@ -26,4 +26,4 @@ const GradientAudio = ({ ampValues, pixel_count, color, bgColor, activeFb, volum
     return [...sliceB, ...sliceA]
 }
 
-export default GradientAudio
+export default GradientAudioInv

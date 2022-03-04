@@ -1,5 +1,6 @@
 import GradientRolling from "./gradientRolling";
 import GradientAudio from "./gradientsAudio";
+import GradientsAudioInv from "./gradientsAudioInv";
 import GradientStatic from "./gradientStatic";
 import Power from "./power";
 import Wavelength from "./wavelength";
@@ -12,6 +13,7 @@ export const effects = [
     'GradientStatic',
     'GradientRolling',
     'GradientAudio',
+    'GradientsAudioInv',
 ]
 
 const Effect = ({ type, config }) => {
@@ -33,6 +35,9 @@ const Effect = ({ type, config }) => {
             
         case 'GradientAudio':
             return GradientAudio(config)
+            
+        case 'GradientsAudioInv':
+            return GradientsAudioInv(config)
 
         default:
             return Power(config)

@@ -36,7 +36,9 @@ let tray = null;
     height: 800,
     titleBarStyle: "hidden",
     webPreferences: {
+      // nodeIntegration: true,
       contextIsolation: false,      
+      // nodeIntegrationInWorker: true,
       enableRemoteModule: true,
       webSecurity: false,
       backgroundThrottling: false
@@ -66,6 +68,20 @@ let tray = null;
   ipcMain.on('UDP-stop', async () => {
     await socket.stop()
   })
+
+  // ipcMain.on('UDPSR-start', () => {
+  //   socket = DgramAsPromised.createSocket("udp4")
+  //   PORT = 11988
+  // })
+
+  // ipcMain.on('UDPSR', async (event, arg) => {
+  //   console.log(arg[1])
+  //   message = Buffer.from(arg[1])
+  //   await socket.send(message, 0, message.length, PORT, '239.0.0.1')
+  // })
+  // ipcMain.on('UDPSR-stop', async () => {
+  //   await socket.stop()
+  // })
 
   // tray = new Tray(nativeImage.createFromDataURL('data:image/x-icon;base64,AAABAAEAEBAAAAEAGACGAAAAFgAAAIlQTkcNChoKAAAADUlIRFIAAAAQAAAAEAgGAAAAH/P/YQAAAE1JREFUOI1j/P//PwOxgNGeAUMxE9G6cQCKDWAhpADZ2f8PMjBS3QW08QK20KaZC2gfC9hCnqouoNgARgY7zMxAyNlUdQHlXiAlO2MDAD63EVqNHAe0AAAAAElFTkSuQmCC'))
 

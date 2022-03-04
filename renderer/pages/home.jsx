@@ -63,18 +63,19 @@ function Home() {
     setSuccess(false)
     setError(false)
     setLoading(true)
-    fetch(`http://${newIp}/json/info`)
+    fetch(`http://${newIp}/json`)
       .then(r => r.json())
       .then((res) => {
-        if (res.name) {
+        if (res.info.name) {
           setSuccess(true)
           window && window.localStorage.setItem("wled-manager-ip", newIp)
           setDevice({
-            "name": res.name,
-            "type": res.arch === "esp8266" ? 82 : 32,
+            "name": res.info.name,
+            "type": res.info.arch === "esp8266" ? 82 : 32,
             "ip": newIp,
-            "vid": res.vid,
-            "pixel_count": res.leds.count
+            "vid": res.info.vid,
+            "pixel_count": res.info.leds.count,
+            "seg": res.state.seg
           })
 
           if (zeroconf) {

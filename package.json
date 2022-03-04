@@ -2,12 +2,13 @@
   "private": true,
   "name": "wled-manager",
   "description": "WLED Manager by Blade",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "author": "YeonV aka Blade <https://github.com/YeonV>",
   "main": "app/background.js",
   "scripts": {
     "dev": "nextron",
     "build": "nextron build",
+    "dist": "electron-builder -w zip -w portable -w nsis",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
@@ -18,6 +19,7 @@
     "electron-serve": "^1.1.0",
     "electron-store": "^8.0.0",
     "react-colorful": "^5.5.0",
+    "react-gcolor-picker": "^1.2.4",
     "zustand": "^3.5.11"
   },
   "devDependencies": {

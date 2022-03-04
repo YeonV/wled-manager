@@ -82,6 +82,7 @@ export default function Visualizer({
     const lastAudio = useRef(null);
 
     const device = useStore(state => state.device)
+    const devices = useStore(state => state.devices)
     const audioDevice = useStore(state => state.audioDevice)
     const setAudioDevice = useStore(state => state.setAudioDevice)
     const audioDevices = useStore(state => state.audioDevices)
@@ -102,7 +103,11 @@ export default function Visualizer({
     const [flipped, setFlipped] = useState(false)
     const [effect, setEffect] = useState("Power (Left FB)")
     const [volume, setVolume] = useState(0)
-    const [innerVolume, setInnerVolume] = useState(0)    
+    const [innerVolume, setInnerVolume] = useState(0)   
+    const virtualView = useStore(state => state.virtualView)
+    const virtual = useStore(state => state.virtual)
+    const setDrawerBottomHeight = useStore(state => state.setDrawerBottomHeight)
+
 
     const settingColor = (clr) => {
         setColor(clr)
@@ -173,7 +178,7 @@ export default function Visualizer({
                         type: effect,
                         config: {
                             ampValues: amplitudeValues.current,
-                            pixel_count: device.pixel_count,
+                            pixel_count: virtualView ? virtual.pixel_count : device.pixel_count,
                             color,
                             bgColor,
                             gcolor,
@@ -199,9 +204,17 @@ export default function Visualizer({
                     // ledData && ledData.length > 1 && ipcRenderer.send('UDPSR', [{ ip: device.ip }, 
                     //     `${header}${myVals}${sampleAvc}${sample}${sampleAvg}${samplePeak}${fftResult}${FFT_Magnitude}${FFT_MajorPeak}`])
 
-                    ledData && ledData.length > 1 && ipcRenderer.send('UDP', [{ ip: device.ip }, flipped
-                        ? [...ledDataPrefix, ...ledData.reverse().flat()]
-                        : [...ledDataPrefix, ...ledData.flat()]])
+                    if (virtualView) {
+                        virtual.seg && virtual.seg.length && virtual.seg.map(s=>{
+                            ledData && ledData.length > 1 && ipcRenderer.send('UDP', [{ ip: devices.find(d=>d.name === s.device).ip }, flipped
+                                ? [...ledDataPrefix, ...ledData.reverse().flat()].splice(s.seg[0]*3, s.seg[1]*3)
+                                : [...ledDataPrefix, ...ledData.flat()].splice(s.seg[0]*3, s.seg[1]*3)])
+                        })
+                    } else {                    
+                        ledData && ledData.length > 1 && ipcRenderer.send('UDP', [{ ip: device.ip }, flipped
+                            ? [...ledDataPrefix, ...ledData.reverse().flat()]                            
+                            : [...ledDataPrefix, ...ledData.flat()]])
+                    }
 
                     // ledData && ledData.length > 1 && ipcRenderer.send('UDP', [{ ip: device.ip }, (amplitudeValues.current[activeFb] - volume * 2.55) > 0
                     //     ? [...ledDataPrefix, ...tmp.reverse().flat()]
@@ -230,7 +243,7 @@ export default function Visualizer({
     function handleStopButtonClick() {
         setPlaying(false)
         ipcRenderer.send('UDP-stop')
-        console.log(performance.now() - timeStarted.current)
+        // console.log(performance.now() - timeStarted.current)
         // ipcRenderer.send('UDPSR-stop')
         if (frequencyBandArray.length > 0) {
             let domElements = frequencyBandArray.map((num) =>
@@ -373,11 +386,11 @@ export default function Visualizer({
                 </div>
                 <div style={{ display: 'flex', paddingTop: 10 }}>
                     {effect.indexOf("radient") === -1 &&
-                        <ColorPicker label="COL" color={color} onChange={settingColor} />}
+                        <ColorPicker label="COL" color={color} onChange={settingColor} setDrawerBottomHeight={setDrawerBottomHeight} />}
                     {effect !== "BladeWave (Range)" && effect.indexOf("radient") === -1 &&
-                        <ColorPicker label="BG" color={bgColor} onChange={settingBgColor} />
+                        <ColorPicker label="BG" color={bgColor} onChange={settingBgColor} setDrawerBottomHeight={setDrawerBottomHeight} />
                     }
-                    {effect.indexOf("radient") > -1 && <ColorPicker label="GR" color={gcolor} onChange={settingGcolor} gradient />}
+                    {effect.indexOf("radient") > -1 && <ColorPicker label="GR" color={gcolor} onChange={settingGcolor} setDrawerBottomHeight={setDrawerBottomHeight} gradient />}
                     <Toggle label="Flip" value={flipped} setValue={settingFlipped} />
                 </div>
             </div>
@@ -386,7 +399,6 @@ export default function Visualizer({
                 <YZslider
                     orientation="vertical"
                     value={volume}
-                    color="inherit"
                     onChange={(e, v) => setVolume(v)}
                     onChangeCommitted={settingVolume}
                     min={0}

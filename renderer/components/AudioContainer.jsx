@@ -1,6 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Visualizer from './Visualizer';
-// import aubio from 'aubiojs';
+// const aubio = require('../../../aubiojs')
+// import Essentia from './essentia.js-core.es.js';
+// // import essentia-wasm-module
+// import { EssentiaWASM } from './essentia-wasm.es.js';
+
+// create essentia object with all the methods to run various algorithms
+// by loading the wasm back-end.
+// here, `EssentiaModule` is an emscripten module object imported to the global namespace
+
+
 
 const AudioDataContainer = ({ audioDeviceId, fft, bandCount, drawerBottomHeight }) => {
   const [frequencyBandArray] = useState([...Array(bandCount).keys()]);
@@ -8,6 +17,7 @@ const AudioDataContainer = ({ audioDeviceId, fft, bandCount, drawerBottomHeight 
   const audioContext = useRef(new AudioContext());
   const theStream = useRef(null);
   const theGain = useRef(null);
+
   // const theTempo = useRef(null);
   // const theAubio = useRef(null);
 
@@ -19,6 +29,17 @@ const AudioDataContainer = ({ audioDeviceId, fft, bandCount, drawerBottomHeight 
       }
       const source = audioContext.current.createMediaStreamSource(stream);
       const analyser = audioContext.current.createAnalyser();
+
+      // const audioBuffer = audioContext.current.createBuffer(1, 1024, audioContext.current.sampleRate);
+      // let esPkg = require('essentia.js');
+
+      // let essentia = new esPkg.Essentia(esPkg.EssentiaWASM);
+      // const inputSignalVector = essentia.arrayToVector(audioBuffer.getChannelData(0));
+      // let outputRG = essentia.ReplayGain(inputSignalVector, // input
+      //   44100); // sampleRate (parameter optional)
+
+
+      // console.log(outputRG.replayGain);
 
       // const scriptProcessor = audioContext.current.createScriptProcessor(
       //   1024,
@@ -68,6 +89,12 @@ const AudioDataContainer = ({ audioDeviceId, fft, bandCount, drawerBottomHeight 
     if (!audioData.current) {
       return;
     }
+    // const worker = new Worker('./audioWorker.js', { type: 'module' });
+    // await worker.postMessage(audioData.current);
+
+    // worker.onmessage = ({ data }) => {
+    //     console.log(`page got message: ${data}`);      
+    // };
     const bufferLength = audioData.current.frequencyBinCount;
     const amplitudeArray = new Uint8Array(bufferLength);
 
@@ -112,10 +139,17 @@ const AudioDataContainer = ({ audioDeviceId, fft, bandCount, drawerBottomHeight 
   //     const { Tempo } = await aubio();
   //     const tempo = new Tempo(4096, 1024, audioContext.current.sampleRate);
   //     theTempo.current = tempo;
-  //     console.log("YZ2", theTempo.current)
   //   };
   //   init();
   // }, []);
+
+  // useEffect(() => {
+  //     console.log("YZ2", theTempo.current)
+  //     const audioBuffer = audioContext.current.createBuffer(1, 1024, audioContext.current.sampleRate);
+  //     theTempo.current && theTempo.current.do(audioBuffer);
+  //     const bpm = theTempo.current && theTempo.current.getBpm();
+  //     console.log(bpm)
+  // }, [theTempo.current, audioContext.current]);
   return (
     <div style={{ height: 255, position: 'relative', top: drawerBottomHeight === 800 ? 390 : 0 }}>
       <Visualizer

@@ -10,6 +10,23 @@ const storeSettings = (set, get) => ({
         devices: newDevices
     })),
 
+    virtual: '',
+    setVirtual: (newVirtual) => set(() => ({
+        virtual: newVirtual
+    })),
+
+    virtuals: [],
+    setVirtuals: (newVirtuals) => set(() => ({
+        virtuals: newVirtuals
+    })),
+
+    addVirtual: (newVirtual) => set((state) => ({
+        virtuals: state.virtuals.find(v=>v.name === newVirtual.name) ? [...state.virtuals.filter(v=>v.name !== newVirtual.name), newVirtual] : [...state.virtuals, newVirtual]
+    })),
+    removeVirtual: (newVirtual) => set((state) => ({
+        virtuals: state.virtuals.find(v=>v.name === newVirtual.name) ? [...state.virtuals.filter(v=>v.name !== newVirtual.name)] : state.virtuals
+    })),
+
     iframe: '',
     setIframe: (ip) => set(() => ({
         iframe: ip

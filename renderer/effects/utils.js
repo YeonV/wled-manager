@@ -14,10 +14,26 @@ export const getGradientSteps = (colorStart,colorEnd,colorCount) => {
 
 export const getMultipleGradientSteps = (colors, count) => {
     const output = []
-    for (let i = 0; i < colors.length - 1; i++) {
+    for (let i = 0; i < colors.length - 2; i++) {
+        const gradient = getGradientSteps(
+            colors[i+1], 
+            colors[i], 
+            i === colors.length - 1 
+                ? count - ((colors.length - 2) * Math.floor(count / (colors.length - 1)))
+                : Math.floor(count / (colors.length - 1))
+        )
+        output.push(gradient)
+    }
+    return output.flat()
+}
+
+export const getMultipleGradientStepsInverted = (colors, count) => {
+    const output = []
+    for (let i = 0; i < colors.length - 2; i++) {
         const gradient = getGradientSteps(
             colors[i], 
-            colors[i+1], i === colors.length - 1 
+            colors[i+1], 
+            i === colors.length - 1 
                 ? count - ((colors.length - 2) * Math.floor(count / (colors.length - 1)))
                 : Math.floor(count / (colors.length - 1))
         )

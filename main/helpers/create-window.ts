@@ -77,6 +77,7 @@ export default (windowName: string, options: BrowserWindowConstructorOptions): B
     titleBarStyle: "hidden",
     webPreferences: {
       nodeIntegration: true,
+      // nodeIntegrationInWorker: true,
       contextIsolation: false,
       enableRemoteModule: true,
       ...options.webPreferences,
