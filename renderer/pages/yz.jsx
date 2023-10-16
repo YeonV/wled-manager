@@ -12,6 +12,7 @@ import AudioDataContainer from '../components/AudioContainer';
 import useStore from '../store/store';
 import AddVirtual from '../components/AddVirtual';
 import AddSegment from '../components/AddSegment';
+import { TitlebarColor } from 'custom-electron-titlebar';
 
 const LeftBar = () => {
   if (typeof window === 'undefined') {
@@ -90,7 +91,7 @@ const LeftBar = () => {
     const { Menu } = remote;
     const customTitleBar = require('custom-electron-titlebar');
     const titlebar = new customTitleBar.Titlebar({
-      // backgroundColor: customTitleBar.Color.fromHex('#444'),
+      backgroundColor: TitlebarColor.fromHex('#444'),
       icon: '/images/logo.png',
     });
     const temp = template()

@@ -1,55 +1,46 @@
-import {
-  app,
-  Tray,
-  Menu,
-  nativeImage,
-  ipcMain
-} from 'electron';
-import serve from 'electron-serve';
-import { createWindow } from './helpers';
-import { DgramAsPromised } from "dgram-as-promised"
-import installExtension, { REDUX_DEVTOOLS } from 'electron-devtools-installer';
+import { app, Tray, Menu, nativeImage, ipcMain } from 'electron'
+import serve from 'electron-serve'
+import { createWindow } from './helpers'
+import { DgramAsPromised } from 'dgram-as-promised'
+import installExtension, { REDUX_DEVTOOLS } from 'electron-devtools-installer'
 
-
-const path = require('path');
-const isProd: boolean = process.env.NODE_ENV === 'production';
-
+const path = require('path')
+const isProd: boolean = process.env.NODE_ENV === 'production'
 
 if (isProd) {
-  serve({ directory: 'app' });
+  serve({ directory: 'app' })
 } else {
-  app.setPath('userData', `${app.getPath('userData')} (development)`);
+  app.setPath('userData', `${app.getPath('userData')} (development)`)
 }
 
-let tray = null;
+let tray = null
 
-(async () => {
-  await app.whenReady();
+;(async () => {
+  await app.whenReady()
 
-
-  app.commandLine.appendSwitch('disable-renderer-backgrounding');
-  app.commandLine.appendSwitch('disable-background-timer-throttling');
-  app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+  app.commandLine.appendSwitch('disable-renderer-backgrounding')
+  app.commandLine.appendSwitch('disable-background-timer-throttling')
+  app.commandLine.appendSwitch('disable-backgrounding-occluded-windows')
 
   const mainWindow = createWindow('main', {
     width: 480,
     height: 800,
-    titleBarStyle: "hidden",
+    titleBarStyle: 'hidden',
     webPreferences: {
       // nodeIntegration: true,
-      contextIsolation: false,      
+      contextIsolation: false,
       // nodeIntegrationInWorker: true,
       enableRemoteModule: true,
       webSecurity: false,
-      backgroundThrottling: false
+      backgroundThrottling: false,
     },
-  });
+  })
 
   ipcMain.on('resize-me-please', (event, arg) => {
     mainWindow.setSize(arg[0], arg[1])
   })
   ipcMain.on('close', (event) => {
-    app.quit();
+    app.quit()
   })
 
   let socket
@@ -57,7 +48,7 @@ let tray = null;
   let message
 
   ipcMain.on('UDP-start', () => {
-    socket = DgramAsPromised.createSocket("udp4")
+    socket = DgramAsPromised.createSocket('udp4')
     PORT = 21324
   })
 
@@ -85,8 +76,9 @@ let tray = null;
 
   // tray = new Tray(nativeImage.createFromDataURL('data:image/x-icon;base64,AAABAAEAEBAAAAEAGACGAAAAFgAAAIlQTkcNChoKAAAADUlIRFIAAAAQAAAAEAgGAAAAH/P/YQAAAE1JREFUOI1j/P//PwOxgNGeAUMxE9G6cQCKDWAhpADZ2f8PMjBS3QW08QK20KaZC2gfC9hCnqouoNgARgY7zMxAyNlUdQHlXiAlO2MDAD63EVqNHAe0AAAAAElFTkSuQmCC'))
 
-
-  const icon = nativeImage.createFromPath(path.join(__dirname, 'images/logo32.png')).resize({ width: 16, height: 16 })
+  const icon = nativeImage
+    .createFromPath(path.join(__dirname, 'images/logo32.png'))
+    .resize({ width: 16, height: 16 })
   // const icon = isProd ? nativeImage.createFromPath('./images/logo256.png') : path.join(__dirname, 'images/logo256.png')
   tray = new Tray(icon)
 
@@ -98,24 +90,24 @@ let tray = null;
     { label: 'seperator', type: 'separator' },
     { label: 'Dev', click: () => mainWindow.webContents.openDevTools() },
     { label: 'seperator', type: 'separator' },
-    { label: 'Exit', click: () => app.quit() }
+    { label: 'Exit', click: () => app.quit() },
   ])
   tray.setToolTip('WLED Manager')
   tray.setContextMenu(contextMenu)
 
   if (isProd) {
-    await mainWindow.loadURL('app://./home.html');
+    await mainWindow.loadURL('app://./home.html')
     // mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
-    const port = process.argv[2];
-    await mainWindow.loadURL(`http://localhost:${port}/home`);
+    const port = process.argv[2]
+    await mainWindow.loadURL(`http://localhost:${port}/home`)
     installExtension(REDUX_DEVTOOLS)
-        .then((name) => console.log(`Added Extension:  ${name}`))
-        .catch((err) => console.log('An error occurred: ', err));
-    mainWindow.webContents.openDevTools({ mode: 'detach' });
+      .then((name) => console.log(`Added Extension:  ${name}`))
+      .catch((err) => console.log('An error occurred: ', err))
+    mainWindow.webContents.openDevTools({ mode: 'detach' })
   }
-})();
+})()
 
 app.on('window-all-closed', () => {
-  app.quit();
-});
+  app.quit()
+})
