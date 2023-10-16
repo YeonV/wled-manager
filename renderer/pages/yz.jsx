@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import clsx from 'clsx';
-import { remote } from 'electron';
+// import { remote } from 'electron';
 import { useRouter } from 'next/router';
 import { ipcRenderer } from 'electron';
 import { ArrowDownward, ArrowUpward, ChevronLeft, ChevronRight, Close, Equalizer, Refresh, Settings } from '@material-ui/icons';
 import { Drawer, List, Divider, Card, Typography, Button, IconButton, Tooltip, TextField } from '@material-ui/core';
 import useLeftBarStyles from '../styles/yz.styles';
-import { template } from '../components/MenuTemplate';
+// import { template } from '../components/MenuTemplate';
 import AudioDataContainer from '../components/AudioContainer';
 import useStore from '../store/store';
 import AddVirtual from '../components/AddVirtual';
@@ -88,15 +88,15 @@ const LeftBar = () => {
   };
 
   useEffect(() => {
-    const { Menu } = remote;
+    // const { Menu } = remote;
     const customTitleBar = require('custom-electron-titlebar');
     const titlebar = new customTitleBar.Titlebar({
       backgroundColor: TitlebarColor.fromHex('#444'),
       icon: '/images/logo.png',
     });
-    const temp = template()
-    const menu = Menu.buildFromTemplate(temp)
-    titlebar.updateMenu(menu);
+    // const temp = template()
+    // const menu = Menu.buildFromTemplate(temp)
+    // titlebar.updateMenu(menu);
 
     return () => {
       titlebar.dispose();
