@@ -90,7 +90,7 @@ const LeftBar = () => {
     const { Menu } = remote;
     const customTitleBar = require('custom-electron-titlebar');
     const titlebar = new customTitleBar.Titlebar({
-      backgroundColor: customTitleBar.Color.fromHex('#444'),
+      // backgroundColor: customTitleBar.Color.fromHex('#444'),
       icon: '/images/logo.png',
     });
     const temp = template()
