@@ -25,11 +25,11 @@ import {
 import {
   ArrowDownward,
   ArrowUpward,
-  Cast,
   ChevronLeft,
   ChevronRight,
   Close,
   Equalizer,
+  PlayArrow,
   Refresh,
   Settings,
   Stop
@@ -394,6 +394,15 @@ const Manager = () => {
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (is2D) {
+      setSizeW(device.seg?.[0]?.stop - device.seg?.[0]?.start)
+      setSizeH(device.seg?.[0]?.stopY - device.seg?.[0]?.startY)
+      setZoom(Math.ceil(80 / Math.min(sizeW, sizeH)) )
+    }
+    device.seg?.[0]?.startY
+  },[is2D])
 
   return (
     <>
@@ -778,14 +787,14 @@ const Manager = () => {
                       <Typography marginTop={3} marginBottom={2}>
                         2D Matrix detected
                       </Typography>
-                      <Stack direction='row' spacing={2}>
+                      <Stack direction='row' spacing={1} paddingRight={1}>
                         <TextField
                           select
                           variant='outlined'
                           label='Video Input'
                           // disabled={playing}
                           value={videoDevice || 'none'}
-                          style={{ width: '100%' }}
+                          sx={{ width: '100%', height: '60px', '& .MuiInputBase-root': { height: '60px' } }}
                           onChange={(e) => {
                             setVideoDevice(e.target.value as 'screen' | 'camera' | 'none')
                           }}
@@ -800,7 +809,7 @@ const Manager = () => {
                           label='Width'
                           size='small'
                           type='number'
-                          style={{ width: 120, margin: 10 }}
+                          sx={{ width: '120px', height: '60px', '& .MuiInputBase-root': { height: '60px' } }}
                           variant='outlined'
                           defaultValue={sizeW}
                           onBlur={(e) => {
@@ -813,7 +822,7 @@ const Manager = () => {
                           label='Height'
                           size='small'
                           type='number'
-                          style={{ width: 120, margin: 10 }}
+                          sx={{ width: '120px', height: '60px', '& .MuiInputBase-root': { height: '60px' } }}
                           variant='outlined'
                           defaultValue={sizeH}
                           onBlur={(e) => {
@@ -826,7 +835,7 @@ const Manager = () => {
                           label='Zoom'
                           size='small'
                           type='number'
-                          style={{ width: 120, margin: 10, marginBottom: 10 }}
+                          sx={{ width: '120px', height: '60px', '& .MuiInputBase-root': { height: '60px' } }}
                           variant='outlined'
                           value={zoom}
                           onChange={(e) => {
@@ -835,13 +844,11 @@ const Manager = () => {
                             }
                           }}
                         />
-                      </Stack>
-                      <Stack direction='row' spacing={2}>
-                        <Button startIcon={<Cast />} onClick={startCapture}>
-                          Share
-                        </Button>
-                        <Button startIcon={<Stop />} onClick={stopCapture}>
-                          Stop
+                        <Button onClick={startCapture} variant='outlined'>
+                          <PlayArrow />
+                        </Button>                        
+                        <Button onClick={stopCapture} variant='outlined'>
+                          <Stop />
                         </Button>
                       </Stack>
                       <video autoPlay muted hidden width={sizeW + 'px'} height={sizeH + 'px'} ref={videoRef}></video>
@@ -879,6 +886,8 @@ const Manager = () => {
         </div>
 
         <AudioDataContainer
+          is2D={is2D}
+          ctx={ctx}
           selectedPixels={selectedPixels}
           audioDeviceId={audioDevice}
           videoDevice={videoDevice}

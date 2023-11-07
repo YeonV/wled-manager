@@ -72,7 +72,9 @@ export default function Visualizer({
   audioContext,
   fft,
   bandCount,
-  selectedPixels
+  selectedPixels,
+  is2D,
+  ctx
 }: any) {
   const classes = useVisualizerStyles()
   const theme = useTheme()
@@ -208,6 +210,14 @@ export default function Visualizer({
                 { ip: device.ip },
                 flipped ? [...ledDataPrefix, ...ledData.reverse().flat()] : [...ledDataPrefix, ...ledData.flat()]
               ])
+          }
+        } else {
+          if (is2D) {
+            for (let i = 0; i < frequencyBandArray.length; i++) {
+              const num = frequencyBandArray[i]              
+              ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`
+              ctx.fillRect(i, 8, 1, amplitudeValues.current?.[num] ? -amplitudeValues.current?.[num] / 20 : 1)
+            }
           }
         }
       }

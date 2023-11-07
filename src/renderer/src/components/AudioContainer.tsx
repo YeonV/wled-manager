@@ -18,7 +18,9 @@ const AudioDataContainer = ({
   drawerBottomHeight,
   videoDevice = 'none',
   theStream,
-  selectedPixels
+  selectedPixels,
+  is2D = false,
+  ctx
 }: any) => {
   const [frequencyBandArray] = useState([...Array(bandCount).keys()])
   const audioData = useRef<AnalyserNode | null>(null)
@@ -139,6 +141,8 @@ const AudioDataContainer = ({
       }}
     >
       <Visualizer
+        is2D={is2D}
+        ctx={ctx}
         selectedPixels={selectedPixels}
         fft={fft}
         bandCount={bandCount}
