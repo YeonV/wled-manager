@@ -78,6 +78,8 @@ const Manager = () => {
     drawerBottomHeight,
     bottomBarOpen
   })
+
+  const amplitudeValues = useRef(null)
   const is2D = device.seg?.[0]?.startY === 0
   const [videoDevice, setVideoDevice] = useState<'none' | 'camera' | 'screen'>('none')
   const [zoom, setZoom] = useState(1)
@@ -104,6 +106,8 @@ const Manager = () => {
       selectedPixels.current = selectedPixels.current.filter((p) => p[0] !== x && p[1] !== y)
     }
   }
+  const [frequencyBandArray] = useState([...Array(audioSettings.bands).keys()])
+
   const convertCanvas = async (ctx: CanvasRenderingContext2D, xres: number, yres: number) => {
     const ledDataPrefix = [2, 1]
 
@@ -139,6 +143,14 @@ const Manager = () => {
       selectedPixels.current.forEach((p) => {
         ctx.fillRect(p[0], p[1], 1, 1)
       })
+
+      if (amplitudeValues.current) {
+        for (let i = 0; i < frequencyBandArray.length; i++) {
+          const num = frequencyBandArray[i]              
+          ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`
+          ctx.fillRect(i, 8, 1, amplitudeValues.current?.[num] ? -amplitudeValues.current?.[num] / 20 : 1)
+        }
+      }
       // ctx.fillText('Y', 0, 0)
       // ctx.strokeStyle = 'white'
       // ctx.strokeText('Pixel-Matrix', 0, 150, 300)
@@ -888,6 +900,7 @@ const Manager = () => {
         <AudioDataContainer
           is2D={is2D}
           ctx={ctx}
+          amplitudeValues={amplitudeValues}
           selectedPixels={selectedPixels}
           audioDeviceId={audioDevice}
           videoDevice={videoDevice}

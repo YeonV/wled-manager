@@ -74,11 +74,11 @@ export default function Visualizer({
   bandCount,
   selectedPixels,
   is2D,
-  ctx
+  ctx,
+  amplitudeValues
 }: any) {
   const classes = useVisualizerStyles()
   const theme = useTheme()
-  const amplitudeValues = useRef(null)
   const timeStarted = useRef<number | null>(null)
   const lastShift = useRef<number | null>(null)
   const lastAudio = useRef<number | null>(null)
@@ -161,10 +161,10 @@ export default function Visualizer({
       return
     }
     amplitudeValues.current = newAmplitudeData
-    if (frequencyBandArray.length > 0) {
-      const domElements = frequencyBandArray.map((num) => document.getElementById(num))
+    if (frequencyBandArray?.length > 0) {
+      const domElements = frequencyBandArray?.map((num) => document.getElementById(num))
       if (domElements.length > 0) {
-        for (let i = 0; i < frequencyBandArray.length; i++) {
+        for (let i = 0; i < frequencyBandArray?.length; i++) {
           const num = frequencyBandArray[i]
           if (domElements[num]) {
             domElements[num].style.backgroundColor = `rgb(${color.r}, ${color.g}, ${color.b})`
@@ -213,11 +213,11 @@ export default function Visualizer({
           }
         } else {
           if (is2D) {
-            for (let i = 0; i < frequencyBandArray.length; i++) {
-              const num = frequencyBandArray[i]              
-              ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`
-              ctx.fillRect(i, 8, 1, amplitudeValues.current?.[num] ? -amplitudeValues.current?.[num] / 20 : 1)
-            }
+            // for (let i = 0; i < frequencyBandArray.length; i++) {
+            //   const num = frequencyBandArray[i]              
+            //   ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`
+            //   ctx.fillRect(i, 8, 1, amplitudeValues.current?.[num] ? -amplitudeValues.current?.[num] / 20 : 1)
+            // }
           }
         }
       }
@@ -245,9 +245,9 @@ export default function Visualizer({
     window.api.udpStop()
     // console.log(performance.now() - timeStarted.current)
     // ipcRenderer.send('UDPSR-stop')
-    if (frequencyBandArray.length > 0) {
-      const domElements = frequencyBandArray.map((num) => document.getElementById(num))
-      for (let i = 0; i < frequencyBandArray.length; i++) {
+    if (frequencyBandArray?.length > 0) {
+      const domElements = frequencyBandArray?.map((num) => document.getElementById(num))
+      for (let i = 0; i < frequencyBandArray?.length; i++) {
         const num = frequencyBandArray[i]
         domElements[num].style.backgroundColor = theme.palette.background.paper
       }
@@ -447,7 +447,7 @@ export default function Visualizer({
         </Typography>
       )}
       <div className={`${classes.fC} ${activeFb > -1 || activeRightFb > -1 ? 'selection-active' : ''}`}>
-        {frequencyBandArray.map((num) => (
+        {frequencyBandArray?.map((num) => (
           <div style={{ position: 'relative' }} key={num}>
             <Paper
               className={`${classes.frequencyBands} ${
@@ -461,7 +461,7 @@ export default function Visualizer({
               }`}
               style={{
                 background: `rgb(${color.r}, ${color.g}, ${color.b})`,
-                padding: `calc(100vw / ${frequencyBandArray.length * 4} )`
+                padding: `calc(100vw / ${frequencyBandArray?.length * 4} )`
               }}
               elevation={4}
               id={num}
