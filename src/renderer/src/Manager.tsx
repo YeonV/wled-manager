@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import useLeftBarStyles, { cls } from './styles/Manager.styles'
-// import { template } from "./components/MenuTemplate";
 import AudioDataContainer from './components/AudioContainer'
 import useStore from './store/store'
 import AddVirtual from './components/AddVirtual'
@@ -16,6 +15,8 @@ import {
   Drawer,
   IconButton,
   List,
+  MenuItem,
+  Stack,
   TextField,
   Tooltip,
   Typography,
@@ -24,12 +25,14 @@ import {
 import {
   ArrowDownward,
   ArrowUpward,
+  Cast,
   ChevronLeft,
   ChevronRight,
   Close,
   Equalizer,
   Refresh,
-  Settings
+  Settings,
+  Stop
 } from '@mui/icons-material'
 import bonjour from 'bonjour'
 
@@ -75,13 +78,102 @@ const Manager = () => {
     drawerBottomHeight,
     bottomBarOpen
   })
+  const is2D = device.seg?.[0]?.startY === 0
+  const [videoDevice, setVideoDevice] = useState<'none' | 'camera' | 'screen'>('none')
+  const [zoom, setZoom] = useState(1)
+  const [sizeW, setSizeW] = useState(64)
+  const [sizeH, setSizeH] = useState(64)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const vcanvasRef = useRef<HTMLCanvasElement>(null)
+  const canvas = canvasRef.current
+  const ctx = canvas?.getContext('2d', { willReadFrequently: true })
+  const vcanvas = vcanvasRef.current
+  const vctx = vcanvas?.getContext('2d', { willReadFrequently: true })
+  const video = videoRef.current
+  const theStream = useRef<MediaStream | null>(null)
+  const selectedPixels = useRef<[number, number][]>([])
+  const color = useStore((state) => state.color)
+  const bgColor = useStore((state) => state.bgColor)
+  const selectPixel = (x: number, y: number) => {
+    const pixel = [x, y] as [number, number]
+    const pixelIndex = selectedPixels.current.findIndex((p) => p[0] === x && p[1] === y)
+    if (pixelIndex === -1) {
+      selectedPixels.current = [...selectedPixels.current, pixel]
+    } else {
+      selectedPixels.current = selectedPixels.current.filter((p) => p[0] !== x && p[1] !== y)
+    }
+  }
+  const convertCanvas = async (ctx: CanvasRenderingContext2D, xres: number, yres: number) => {
+    const ledDataPrefix = [2, 1]
+
+    const imgData = ctx.getImageData(0, 0, xres, yres)
+    const pixels = imgData.data
+
+    // Create an array to store the LED data.
+    const ledData = [] as any
+
+    // Iterate over the pixel data and convert it into the desired format.
+    for (let i = 0; i < pixels.length; i += 4) {
+      const pixelData = [pixels[i], pixels[i + 1], pixels[i + 2]]
+      ledData.push(pixelData)
+    }
+
+    // Flatten the LED data and add the prefix.
+    const udpData = [{ ip: device.ip }, [...ledDataPrefix, ...ledData.flat()]]
+    window.api.udp(udpData)
+  }
+
+  const videoCB = () => {
+    // const startT = performance.now()
+    if (video && vctx && ctx && canvas) {
+      const w = (video.videoWidth / video.videoHeight) * canvas.height
+      ctx.fillStyle = `rgb(${bgColor.r},${bgColor.g},${bgColor.b})`
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      vctx.drawImage(video, 0, 0)
+      ctx.drawImage(video, (canvas.width - w) * 0.5, 0, w, canvas.height)
+
+      // ctx.font = '6px serif'
+
+      ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`
+      selectedPixels.current.forEach((p) => {
+        ctx.fillRect(p[0], p[1], 1, 1)
+      })
+      // ctx.fillText('Y', 0, 0)
+      // ctx.strokeStyle = 'white'
+      // ctx.strokeText('Pixel-Matrix', 0, 150, 300)
+
+      convertCanvas(ctx, canvas.width, canvas.height)
+      video.requestVideoFrameCallback(videoCB)
+    }
+    // const endT = performance.now()
+    // console.log(`Total ctx vctx conv time: ${endT - startT} ms`);
+  }
+
+  const startCapture = () => {
+    setTimeout(() => {
+      if (vcanvas && video) {
+        vcanvas.width = video.videoWidth
+        vcanvas.height = video.videoHeight
+        video.srcObject = theStream.current
+        video.play()
+        video.requestVideoFrameCallback(videoCB)
+      }
+    }, 350)
+  }
+  const stopCapture = () => {
+    if (video) {
+      video.pause()
+      video.srcObject = null
+      theStream.current?.getTracks().forEach((track: any) => track.stop())
+    }
+  }
 
   const [combNodes, setCombNodes] = useState<any>([])
   const [isZeroConf, setIsZeroConf] = useState(
     query.get('zeroconf') ||
-    (typeof window !== 'undefined' &&
-      window.localStorage.getItem('wled-manager-zeroconf') === 'true') ||
-    false
+      (typeof window !== 'undefined' && window.localStorage.getItem('wled-manager-zeroconf') === 'true') ||
+      false
   )
   const [singleMode, setSingleMode] = useState(query.get('singlemode') || false)
   const [error, setError] = useState('')
@@ -121,22 +213,6 @@ const Manager = () => {
     })
   }
 
-  // useEffect(() => {
-  //   // const { Menu } = remote;
-  //   const customTitleBar = require("custom-electron-titlebar");
-  //   const titlebar = new customTitleBar.Titlebar({
-  //     backgroundColor: customTitleBar.Color.fromHex("#444"),
-  //     icon: "/images/logo.png",
-  //   });
-  //   const temp = template();
-  //   const menu = Menu.buildFromTemplate(temp);
-  //   titlebar.updateMenu(menu);
-
-  //   return () => {
-  //     titlebar.dispose();
-  //   };
-  // }, []);
-
   useEffect(() => {
     setVirtual(virtuals.find((v) => v.name === virtualView))
   }, [virtualView, virtuals])
@@ -144,9 +220,7 @@ const Manager = () => {
   useEffect(() => {
     virtuals.map((v) => {
       if (v.seg && v.seg.length) {
-        v.pixel_count = v.seg
-          .map((s) => (s.seg && s.seg.length ? s.seg[1] - s.seg[0] : 0))
-          .reduce((a, b) => a + b)
+        v.pixel_count = v.seg.map((s) => (s.seg && s.seg.length ? s.seg[1] - s.seg[0] : 0)).reduce((a, b) => a + b)
       }
       return v
     })
@@ -258,9 +332,7 @@ const Manager = () => {
         .fetch(`http://${iframe}/json/nodes`)
         .then((r) => {
           if (r.status === 501) {
-            console.log(
-              'No zeroconf for autodiscovery available. Also WLED version should be updated'
-            )
+            console.log('No zeroconf for autodiscovery available. Also WLED version should be updated')
           }
           return r
         })
@@ -326,13 +398,13 @@ const Manager = () => {
   return (
     <>
       <Drawer
-        variant="persistent"
-        anchor="left"
+        variant='persistent'
+        anchor='left'
         open={leftBarOpen}
         sx={{
-          width: drawerWidth + 'px',
-          flexShrink: 0,
-          backgroundColor: '#111',
+          'width': drawerWidth + 'px',
+          'flexShrink': 0,
+          'backgroundColor': '#111',
           '& .MuiDrawer-paper': {
             ...cls(theme).drawerPaper({
               drawerBottomHeight,
@@ -354,8 +426,8 @@ const Manager = () => {
             >
               <Button
                 onClick={() => navigate('/home')}
-                variant="outlined"
-                size="small"
+                variant='outlined'
+                size='small'
                 style={{
                   color: '#999',
                   position: 'absolute',
@@ -381,13 +453,10 @@ const Manager = () => {
             justifyContent: 'space-between'
           }}
         >
-          <Typography variant="h6" color="textSecondary">
+          <Typography variant='h6' color='textSecondary'>
             Devices
           </Typography>
-          <IconButton
-            onClick={() => navigate('/')}
-            style={{ color: '#999', padding: '3px', marginRight: '16px' }}
-          >
+          <IconButton onClick={() => navigate('/')} style={{ color: '#999', padding: '3px', marginRight: '16px' }}>
             <Refresh />
           </IconButton>
         </div>
@@ -430,8 +499,8 @@ const Manager = () => {
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <Button
                       disabled
-                      variant="outlined"
-                      size="small"
+                      variant='outlined'
+                      size='small'
                       style={{
                         minWidth: 50,
                         padding: '0',
@@ -443,8 +512,8 @@ const Manager = () => {
                     </Button>
                     <Button
                       disabled
-                      variant="outlined"
-                      size="small"
+                      variant='outlined'
+                      size='small'
                       style={{
                         minWidth: 50,
                         padding: '0',
@@ -460,7 +529,7 @@ const Manager = () => {
             ))}
           <Divider style={{ marginTop: '2rem' }} />
           <div style={{ padding: '0.25rem 0.25rem 0.25rem 1rem' }}>
-            <Typography variant="h6" color="textSecondary">
+            <Typography variant='h6' color='textSecondary'>
               Virtuals
             </Typography>
           </div>
@@ -501,8 +570,8 @@ const Manager = () => {
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <Button
                       disabled
-                      variant="outlined"
-                      size="small"
+                      variant='outlined'
+                      size='small'
                       style={{
                         minWidth: 50,
                         padding: '0',
@@ -514,8 +583,8 @@ const Manager = () => {
                     </Button>
                     <Button
                       disabled
-                      variant="outlined"
-                      size="small"
+                      variant='outlined'
+                      size='small'
                       style={{
                         minWidth: 50,
                         padding: '0',
@@ -541,32 +610,40 @@ const Manager = () => {
         >
           WebAudio
         </Button>
+        {bottomBarOpen && (
+          <Button
+            endIcon={drawerBottomHeight === 350 ? <Settings /> : <Close />}
+            startIcon={<Equalizer />}
+            onClick={(e) => {
+              e.stopPropagation()
+              return setDrawerBottomHeight(drawerBottomHeight === 350 ? 800 : 350)
+            }}
+            style={{ lineHeight: '17px' }}
+          >
+            Advanced
+          </Button>
+        )}
         <Divider />
 
         <div style={{ height: 61, padding: '0 0.5rem' }}>
           <div style={{ display: 'flex' }}>
-            <Typography
-              onClick={() => navigate('/')}
-              gutterBottom
-              variant="subtitle2"
-              style={{ color: '#444' }}
-            >
+            <Typography onClick={() => navigate('/')} gutterBottom variant='subtitle2' style={{ color: '#444' }}>
               {'.'}
             </Typography>
-            <Typography variant="subtitle2" style={{ color: '#444' }}>
+            <Typography variant='subtitle2' style={{ color: '#444' }}>
               {'...'}
             </Typography>
             <Typography
               onClick={() => window && window.localStorage.removeItem('wled-manager-ip')}
               gutterBottom
-              variant="subtitle2"
+              variant='subtitle2'
               style={{ color: '#444' }}
             >
               {'.'}
             </Typography>
           </div>
 
-          <Typography variant="subtitle2" style={{ color: '#444' }}>
+          <Typography variant='subtitle2' style={{ color: '#444' }}>
             by Blade
           </Typography>
         </div>
@@ -574,8 +651,8 @@ const Manager = () => {
 
       <Drawer
         className={classes.drawerBottom}
-        variant="persistent"
-        anchor="bottom"
+        variant='persistent'
+        anchor='bottom'
         open={bottomBarOpen}
         sx={{
           '& .MuiDrawer-paper': cls(theme).drawerBottomPaper({
@@ -591,94 +668,221 @@ const Manager = () => {
         >
           {drawerBottomHeight !== 350 && (
             <>
-              <Typography style={{ paddingLeft: 40, paddingTop: 20 }} variant="h5">
-                WebAudio settings
-              </Typography>
-              <div
-                style={{
-                  padding: 20,
-                  display: 'flex',
-                  flexDirection: 'column'
-                }}
-              >
-                <TextField
-                  label="FFT-size"
-                  error={error === 'fft'}
-                  helperText={error === 'fft' ? '[32,32768] and power of 2' : ''}
-                  size="small"
-                  type="number"
-                  // min={32}
-                  // max={32768}
-                  style={{ width: 120, margin: 10 }}
-                  variant="outlined"
-                  defaultValue={audioSettings.fft}
-                  onBlur={(e) => {
-                    if (
-                      parseInt(e.target.value) != 0 &&
-                      (parseInt(e.target.value) & (parseInt(e.target.value) - 1)) == 0 &&
-                      parseInt(e.target.value) >= 32 &&
-                      parseInt(e.target.value) <= 32768
-                    ) {
-                      setAudioSettings({ fft: parseInt(e.target.value) })
-                      setError('')
-                    } else {
-                      setError('fft')
-                    }
+              <Stack direction='row' alignItems='center' justifyContent={'space-between'}>
+                <Typography style={{ paddingLeft: 40, paddingTop: 20 }} variant='h5'>
+                  WebAudio settings
+                </Typography>
+                {bottomBarOpen && (
+                  <div
+                    style={{
+                      padding: '0 5px',
+                      margin: '0 2px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      return setDrawerBottomHeight(drawerBottomHeight === 350 ? 800 : 350)
+                    }}
+                  >
+                    {drawerBottomHeight === 350 ? <Settings /> : <Close />}
+                  </div>
+                )}
+              </Stack>
+              <Stack direction='row' alignItems='flex-start' justifyContent={'center'}>
+                <div
+                  style={{
+                    padding: 20,
+                    display: 'flex',
+                    flexDirection: 'column'
                   }}
-                />
-                <TextField
-                  label="Bands"
-                  error={error === 'bands'}
-                  helperText={error === 'bands' ? 'min: 1' : ''}
-                  size="small"
-                  type="number"
-                  // min={1}
-                  // max={128}
-                  style={{ width: 120, margin: 10 }}
-                  variant="outlined"
-                  defaultValue={audioSettings.bands}
-                  onBlur={(e) => {
-                    if (parseInt(e.target.value) > 0) {
-                      setAudioSettings({ bands: parseInt(e.target.value) })
-                      setError('')
-                    } else {
-                      setError('bands')
-                    }
-                  }}
-                />
-                <TextField
-                  label="SampleRate"
-                  disabled
-                  size="small"
-                  type="number"
-                  style={{ width: 120, margin: 10 }}
-                  variant="outlined"
-                  defaultValue={audioSettings.sampleRate}
-                />
-                <TextField
-                  label="Left FB"
-                  helperText="via left-click"
-                  disabled
-                  size="small"
-                  style={{ width: 120, margin: 10 }}
-                  variant="outlined"
-                  value={leftFb !== -1 ? leftFb : 'unset'}
-                />
-                <TextField
-                  label="Right FB"
-                  helperText="via right-click"
-                  disabled
-                  size="small"
-                  style={{ width: 120, margin: 10 }}
-                  variant="outlined"
-                  value={rightFb !== -1 ? rightFb : 'unset'}
-                />
-              </div>
+                >
+                  <TextField
+                    label='FFT-size'
+                    error={error === 'fft'}
+                    helperText={error === 'fft' ? '[32,32768] and power of 2' : ''}
+                    size='small'
+                    type='number'
+                    // min={32}
+                    // max={32768}
+                    style={{ width: 120, margin: 10 }}
+                    variant='outlined'
+                    defaultValue={audioSettings.fft}
+                    onBlur={(e) => {
+                      if (
+                        parseInt(e.target.value) != 0 &&
+                        (parseInt(e.target.value) & (parseInt(e.target.value) - 1)) == 0 &&
+                        parseInt(e.target.value) >= 32 &&
+                        parseInt(e.target.value) <= 32768
+                      ) {
+                        setAudioSettings({ fft: parseInt(e.target.value) })
+                        setError('')
+                      } else {
+                        setError('fft')
+                      }
+                    }}
+                  />
+                  <TextField
+                    label='Bands'
+                    error={error === 'bands'}
+                    helperText={error === 'bands' ? 'min: 1' : ''}
+                    size='small'
+                    type='number'
+                    // min={1}
+                    // max={128}
+                    style={{ width: 120, margin: 10 }}
+                    variant='outlined'
+                    defaultValue={audioSettings.bands}
+                    onBlur={(e) => {
+                      if (parseInt(e.target.value) > 0) {
+                        setAudioSettings({ bands: parseInt(e.target.value) })
+                        setError('')
+                      } else {
+                        setError('bands')
+                      }
+                    }}
+                  />
+                  <TextField
+                    label='SampleRate'
+                    disabled
+                    size='small'
+                    type='number'
+                    style={{ width: 120, margin: 10 }}
+                    variant='outlined'
+                    defaultValue={audioSettings.sampleRate}
+                  />
+                  <TextField
+                    label='Left FB'
+                    helperText='via left-click'
+                    disabled
+                    size='small'
+                    style={{ width: 120, margin: 10 }}
+                    variant='outlined'
+                    value={leftFb !== -1 ? leftFb : 'unset'}
+                  />
+                  <TextField
+                    label='Right FB'
+                    helperText='via right-click'
+                    disabled
+                    size='small'
+                    style={{ width: 120, margin: 10 }}
+                    variant='outlined'
+                    value={rightFb !== -1 ? rightFb : 'unset'}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  {is2D ? (
+                    <Stack direction='column' justifyContent='flex-start'>
+                      <Typography marginTop={3} marginBottom={2}>
+                        2D Matrix detected
+                      </Typography>
+                      <Stack direction='row' spacing={2}>
+                        <TextField
+                          select
+                          variant='outlined'
+                          label='Video Input'
+                          // disabled={playing}
+                          value={videoDevice || 'none'}
+                          style={{ width: '100%' }}
+                          onChange={(e) => {
+                            setVideoDevice(e.target.value as 'screen' | 'camera' | 'none')
+                          }}
+                        >
+                          {['camera', 'screen', 'none'].map((d, i) => (
+                            <MenuItem key={i} value={d} disabled={d === 'screen'}>
+                              {d}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                        <TextField
+                          label='Width'
+                          size='small'
+                          type='number'
+                          style={{ width: 120, margin: 10 }}
+                          variant='outlined'
+                          defaultValue={sizeW}
+                          onBlur={(e) => {
+                            if (parseInt(e.target.value) > 0) {
+                              setSizeW(parseInt(e.target.value))
+                            }
+                          }}
+                        />
+                        <TextField
+                          label='Height'
+                          size='small'
+                          type='number'
+                          style={{ width: 120, margin: 10 }}
+                          variant='outlined'
+                          defaultValue={sizeH}
+                          onBlur={(e) => {
+                            if (parseInt(e.target.value) > 0) {
+                              setSizeH(parseInt(e.target.value))
+                            }
+                          }}
+                        />
+                        <TextField
+                          label='Zoom'
+                          size='small'
+                          type='number'
+                          style={{ width: 120, margin: 10, marginBottom: 10 }}
+                          variant='outlined'
+                          value={zoom}
+                          onChange={(e) => {
+                            if (parseInt(e.target.value) > 0) {
+                              setZoom(parseInt(e.target.value))
+                            }
+                          }}
+                        />
+                      </Stack>
+                      <Stack direction='row' spacing={2}>
+                        <Button startIcon={<Cast />} onClick={startCapture}>
+                          Share
+                        </Button>
+                        <Button startIcon={<Stop />} onClick={stopCapture}>
+                          Stop
+                        </Button>
+                      </Stack>
+                      <video autoPlay muted hidden width={sizeW + 'px'} height={sizeH + 'px'} ref={videoRef}></video>
+                      <canvas width={sizeW + 'px'} height={sizeH + 'px'} hidden ref={vcanvasRef}></canvas>
+                      <div>
+                        <canvas
+                          onClick={(e: any) => {
+                            const canvas = e.target
+
+                            // Calculate the x and y coordinates of the click relative to the canvas
+                            const x = Math.floor(((e.nativeEvent.offsetX / canvas.width) * 32) / zoom) + 1
+                            const y = Math.floor(((e.nativeEvent.offsetY / canvas.height) * 8) / zoom) + 1
+
+                            console.log(`Clicked pixel at x: ${x}, y: ${y}`, ctx)
+                            selectPixel(x, y)
+                            if (ctx) {
+                              ctx.fillStyle = 'white'
+                              ctx.fillRect(x, y, 1, 1)
+                            }
+                          }}
+                          width={sizeW + 'px'}
+                          height={sizeH + 'px'}
+                          style={{ zoom: zoom }}
+                          ref={canvasRef}
+                        ></canvas>
+                      </div>
+                    </Stack>
+                  ) : (
+                    <></>
+                  )}
+                </div>
+              </Stack>
             </>
           )}
         </div>
+
         <AudioDataContainer
+          selectedPixels={selectedPixels}
           audioDeviceId={audioDevice}
+          videoDevice={videoDevice}
+          theStream={theStream}
           fft={audioSettings.fft}
           bandCount={audioSettings.bands}
           drawerBottomHeight={drawerBottomHeight}
@@ -714,7 +918,7 @@ const Manager = () => {
                 borderBottom: '1px solid #333'
               }}
             >
-              <Typography style={{ paddingLeft: 40, paddingTop: 20 }} variant="h5">
+              <Typography style={{ paddingLeft: 40, paddingTop: 20 }} variant='h5'>
                 {virtualView}
               </Typography>
             </div>
@@ -752,8 +956,8 @@ const Manager = () => {
                       </Typography>
                       <Button
                         disabled
-                        variant="outlined"
-                        size="small"
+                        variant='outlined'
+                        size='small'
                         style={{ minWidth: 100, padding: '0', flexGrow: 0 }}
                       >
                         {s.seg?.[1] - s.seg?.[0]} Leds
@@ -765,7 +969,7 @@ const Manager = () => {
             </div>
           </div>
         ) : (
-          <iframe src={`http://${iframe}/`} width="100%" height="100%" style={{ border: 0 }} />
+          <iframe src={`http://${iframe}/`} width='100%' height='100%' style={{ border: 0 }} />
         )}
       </Box>
 
@@ -807,7 +1011,7 @@ const Manager = () => {
               justifyContent: 'space-between'
             }}
           >
-            WebAudio
+            !WebAudio
           </div>
           <div style={{ display: 'flex' }}>
             {bottomBarOpen && (

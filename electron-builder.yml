@@ -13,12 +13,18 @@ files:
 asarUnpack:
   - 'resources/**'
 win:
-  executableName: app
+  executableName: wled-manager
+  target:
+    - nsis
+    - portable
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+portable:
+  artifactName: ${name}-${version}-portable.${ext}
+
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   icon: build/icon.png

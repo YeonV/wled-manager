@@ -20,19 +20,19 @@ const useLeftBarStyles = makeStyles(() => ({
       display: 'none'
     }
   },
-  drawerBottom: {
+  'drawerBottom': {
     flexShrink: 0,
     backgroundColor: '#111'
   }
 }))
 export const cls = (theme: Theme) => ({
   drawerHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 0,
-    paddingTop: '30px',
-    height: '99px',
+    'display': 'flex',
+    'justifyContent': 'space-between',
+    'alignItems': 'center',
+    'padding': 0,
+    'paddingTop': '30px',
+    'height': '99px',
     '&&': {
       minHeight: '99px'
     },
@@ -52,22 +52,22 @@ export const cls = (theme: Theme) => ({
   },
 
   activeView: {
-    backgroundColor: theme.palette.secondary.main,
-    boxShadow: theme.shadows[12],
+    'backgroundColor': theme.palette.secondary.main,
+    'boxShadow': theme.shadows[12],
     '&:hover,&:focus,&:visited,&': {
       backgroundColor: theme.palette.secondary.main,
       boxShadow: theme.shadows[12]
     },
-    color: '#fff'
+    'color': '#fff'
   },
   content: () => ({
-    flexGrow: 1,
-    zIndex: 0,
-    height: 'calc(100vh - 60px)',
-    background: 'transparent',
-    padding: 0,
-    position: 'relative',
-    transition: theme.transitions.create('margin', {
+    'flexGrow': 1,
+    'zIndex': 0,
+    'height': 'calc(100vh - 30px)',
+    'background': 'transparent',
+    'padding': 0,
+    'position': 'relative',
+    'transition': theme.transitions.create('margin', {
       easing: theme.transitions.easing.easeIn,
       duration: theme.transitions.duration.leavingScreen
     }),

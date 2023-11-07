@@ -11,11 +11,19 @@ import Visualizer from './Visualizer'
 // by loading the wasm back-end.
 // here, `EssentiaModule` is an emscripten module object imported to the global namespace
 
-const AudioDataContainer = ({ audioDeviceId, fft, bandCount, drawerBottomHeight }: any) => {
+const AudioDataContainer = ({
+  audioDeviceId,
+  fft,
+  bandCount,
+  drawerBottomHeight,
+  videoDevice = 'none',
+  theStream,
+  selectedPixels
+}: any) => {
   const [frequencyBandArray] = useState([...Array(bandCount).keys()])
   const audioData = useRef<AnalyserNode | null>(null)
   const audioContext = useRef<AudioContext | any>(new AudioContext())
-  const theStream = useRef<MediaStream | null>(null)
+
   const theGain = useRef<AudioParam | null>(null)
 
   // const theTempo = useRef(null);
@@ -24,7 +32,7 @@ const AudioDataContainer = ({ audioDeviceId, fft, bandCount, drawerBottomHeight 
   const initializeAudioAnalyser = () => {
     getMedia(audioDeviceId).then((stream) => {
       if (stream) {
-        theStream.current = stream
+        // theStream.current = stream
         if (!audioContext.current || audioContext.current.state === 'closed') {
           return
         }
@@ -62,28 +70,46 @@ const AudioDataContainer = ({ audioDeviceId, fft, bandCount, drawerBottomHeight 
     const ad = await navigator.mediaDevices
       .enumerateDevices()
       .then((devices) =>
-        clientDevice !== null && devices.find((d) => d.deviceId === clientDevice)
-          ? clientDevice
-          : null
+        clientDevice !== null && devices.find((d) => d.deviceId === clientDevice) ? clientDevice : null
       )
+    let videoStream: MediaStream | null = null
+
     if (ad) {
       try {
-        return await navigator.mediaDevices.getUserMedia({
-          audio: { deviceId: { exact: ad } },
-          video: false
-        })
+        if (videoDevice !== 'screen') {
+          videoStream = await navigator.mediaDevices.getUserMedia({
+            audio: { deviceId: { exact: ad } },
+            video: videoDevice !== 'none'
+          })
+        } else {
+          videoStream = await navigator.mediaDevices.getDisplayMedia({
+            audio: { deviceId: { exact: ad } },
+            video: true
+          })
+        }
       } catch (err) {
         console.log('Error:', err)
       }
     } else {
       try {
-        return await navigator.mediaDevices.getUserMedia({
-          audio: true,
-          video: false
-        })
+        if (videoDevice !== 'screen') {
+          videoStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: videoDevice !== 'none'
+          })
+        } else {
+          videoStream = await navigator.mediaDevices.getDisplayMedia({
+            audio: true,
+            video: true
+          })
+        }
       } catch (err) {
         console.log('Error:', err)
       }
+    }
+    if (videoStream) {
+      theStream.current = videoStream
+      return videoStream
     }
     return null
   }
@@ -113,6 +139,7 @@ const AudioDataContainer = ({ audioDeviceId, fft, bandCount, drawerBottomHeight 
       }}
     >
       <Visualizer
+        selectedPixels={selectedPixels}
         fft={fft}
         bandCount={bandCount}
         key={bandCount}

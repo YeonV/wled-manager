@@ -8,21 +8,12 @@ import Effect, { effects } from '../effects/effects'
 import Toggle from './Toggle'
 import useVisualizerStyles from './Visualizer.styles'
 import { styled } from '@mui/styles'
-import {
-  Box,
-  Button,
-  MenuItem,
-  Paper,
-  Slider,
-  TextField,
-  Typography,
-  useTheme
-} from '@mui/material'
+import { Box, Button, MenuItem, Paper, Slider, TextField, Typography, useTheme } from '@mui/material'
 import { PlayArrow, Stop } from '@mui/icons-material'
 
 const YZslider = styled(Slider)({
-  color: 'white',
-  height: 8,
+  'color': 'white',
+  'height': 8,
   '& .MuiSlider-track': {
     border: 'none',
     width: 0
@@ -32,10 +23,10 @@ const YZslider = styled(Slider)({
     width: 0
   },
   '& .MuiSlider-thumb': {
-    height: 20,
-    width: 20,
-    marginLeft: -9,
-    backgroundColor: '#fff0',
+    'height': 20,
+    'width': 20,
+    'marginLeft': -9,
+    'backgroundColor': '#fff0',
     '&:focus, &:hover, &.Mui-active, &.Mui-focusVisible': {
       boxShadow: 'inherit'
     },
@@ -80,7 +71,8 @@ export default function Visualizer({
   refresh,
   audioContext,
   fft,
-  bandCount
+  bandCount,
+  selectedPixels
 }: any) {
   const classes = useVisualizerStyles()
   const theme = useTheme()
@@ -205,10 +197,7 @@ export default function Visualizer({
                   window.api.udp([
                     { ip: devices.find((d) => d.name === s.device).ip },
                     flipped
-                      ? [...ledDataPrefix, ...ledData.reverse().flat()].splice(
-                        s.seg[0] * 3,
-                        s.seg[1] * 3
-                      )
+                      ? [...ledDataPrefix, ...ledData.reverse().flat()].splice(s.seg[0] * 3, s.seg[1] * 3)
                       : [...ledDataPrefix, ...ledData.flat()].splice(s.seg[0] * 3, s.seg[1] * 3)
                   ])
               })
@@ -217,9 +206,7 @@ export default function Visualizer({
               ledData.length > 1 &&
               window.api.udp([
                 { ip: device.ip },
-                flipped
-                  ? [...ledDataPrefix, ...ledData.reverse().flat()]
-                  : [...ledDataPrefix, ...ledData.flat()]
+                flipped ? [...ledDataPrefix, ...ledData.reverse().flat()] : [...ledDataPrefix, ...ledData.flat()]
               ])
           }
         }
@@ -307,7 +294,7 @@ export default function Visualizer({
     }
     setLeftFb(activeFb)
     setRightFb(activeRightFb)
-  }, [color, bgColor, flipped, innerVolume, activeFb, activeRightFb])
+  }, [color, bgColor, flipped, innerVolume, activeFb, activeRightFb, selectedPixels])
 
   useEffect(() => {
     handleStopButtonClick()
@@ -331,26 +318,16 @@ export default function Visualizer({
     <div>
       <div style={{ display: 'flex', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', flex: 1, paddingTop: 10 }}>
-          <Button
-            variant="outlined"
-            disabled={playing}
-            id="startButton"
-            onClick={() => handleStartButtonClick()}
-          >
+          <Button variant='outlined' disabled={playing} id='startButton' onClick={() => handleStartButtonClick()}>
             <PlayArrow />
           </Button>
-          <Button
-            variant="outlined"
-            id="startButton"
-            disabled={!playing}
-            onClick={() => handleStopButtonClick()}
-          >
+          <Button variant='outlined' id='startButton' disabled={!playing} onClick={() => handleStopButtonClick()}>
             <Stop />
           </Button>
           <TextField
             select
-            variant="outlined"
-            label="Audio Input"
+            variant='outlined'
+            label='Audio Input'
             disabled={playing}
             value={audioDevice || 'default'}
             style={{ width: '100%' }}
@@ -368,10 +345,10 @@ export default function Visualizer({
           </TextField>
           <TextField
             select
-            variant="outlined"
+            variant='outlined'
             disabled={playing}
-            title="Effect"
-            label="Effect"
+            title='Effect'
+            label='Effect'
             value={effect}
             style={{ width: '50%' }}
             onChange={(e) => {
@@ -394,7 +371,7 @@ export default function Visualizer({
         <div style={{ display: 'flex', paddingTop: 10 }}>
           {effect.indexOf('radient') === -1 && (
             <ColorPicker
-              label="COL"
+              label='COL'
               color={color}
               onChange={settingColor}
               setDrawerBottomHeight={setDrawerBottomHeight}
@@ -402,7 +379,7 @@ export default function Visualizer({
           )}
           {effect !== 'BladeWave (Range)' && effect.indexOf('radient') === -1 && (
             <ColorPicker
-              label="BG"
+              label='BG'
               color={bgColor}
               onChange={settingBgColor}
               setDrawerBottomHeight={setDrawerBottomHeight}
@@ -410,14 +387,14 @@ export default function Visualizer({
           )}
           {effect.indexOf('radient') > -1 && (
             <ColorPicker
-              label="GR"
+              label='GR'
               color={gcolor}
               onChange={settingGcolor}
               setDrawerBottomHeight={setDrawerBottomHeight}
               gradient
             />
           )}
-          <Toggle label="Flip" value={flipped} setValue={settingFlipped} />
+          <Toggle label='Flip' value={flipped} setValue={settingFlipped} />
         </div>
       </div>
       <Box
@@ -444,13 +421,13 @@ export default function Visualizer({
         }}
       >
         <YZslider
-          orientation="vertical"
+          orientation='vertical'
           value={volume}
           onChange={(_e, v) => typeof v === 'number' && setVolume(v)}
           onChangeCommitted={settingVolume}
           min={0}
           max={100}
-          aria-label="Temperature"
+          aria-label='Temperature'
           onKeyDown={preventHorizontalKeyboardNavigation}
         />
       </Box>
@@ -459,17 +436,16 @@ export default function Visualizer({
           Please select a band at the bottom
         </Typography>
       )}
-      <div
-        className={`${classes.fC} ${activeFb > -1 || activeRightFb > -1 ? 'selection-active' : ''}`}
-      >
+      <div className={`${classes.fC} ${activeFb > -1 || activeRightFb > -1 ? 'selection-active' : ''}`}>
         {frequencyBandArray.map((num) => (
           <div style={{ position: 'relative' }} key={num}>
             <Paper
-              className={`${classes.frequencyBands} ${activeFb > -1 && activeRightFb > -1
-                ? activeFb <= num && activeRightFb >= num
-                  ? 'selected'
-                  : ''
-                : activeFb === num || activeRightFb === num
+              className={`${classes.frequencyBands} ${
+                activeFb > -1 && activeRightFb > -1
+                  ? activeFb <= num && activeRightFb >= num
+                    ? 'selected'
+                    : ''
+                  : activeFb === num || activeRightFb === num
                   ? 'selected'
                   : ''
               }`}
@@ -484,11 +460,12 @@ export default function Visualizer({
               onContextMenu={() => handleFreqBandRightClick(num)}
             />
             <div
-              className={`${classes.frequencyBandsBg} ${activeFb > -1 && activeRightFb > -1
-                ? activeFb <= num && activeRightFb >= num
-                  ? 'selected'
-                  : ''
-                : activeFb === num || activeRightFb === num
+              className={`${classes.frequencyBandsBg} ${
+                activeFb > -1 && activeRightFb > -1
+                  ? activeFb <= num && activeRightFb >= num
+                    ? 'selected'
+                    : ''
+                  : activeFb === num || activeRightFb === num
                   ? 'selected'
                   : ''
               }`}

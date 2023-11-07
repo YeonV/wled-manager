@@ -1,7 +1,5 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useCallback, useRef, useState } from 'react'
 import { RgbColorPicker } from 'react-colorful'
 import useClickOutside from '../lib/useClickOutside'
@@ -9,14 +7,7 @@ import ReactGPicker from 'react-gcolor-picker'
 import classes from '../styles/GradientPicker.styles'
 import { Box, useTheme } from '@mui/material'
 
-const ColorPicker = ({
-  color,
-  onChange,
-  disabled,
-  label,
-  gradient,
-  setDrawerBottomHeight
-}: any) => {
+const ColorPicker = ({ color, onChange, disabled, label, gradient, setDrawerBottomHeight }: any) => {
   const popover = useRef()
   const theme = useTheme()
   const [isOpen, toggle] = useState(false)
@@ -88,26 +79,26 @@ const ColorPicker = ({
           className={'gradient-picker'}
           sx={{
             ...classes.paper,
-            padding: theme.spacing(1),
-            backgroundColor: theme.palette.background.paper,
+            'padding': theme.spacing(1),
+            'backgroundColor': theme.palette.background.paper,
             '& .popup_tabs-header-label-active': {
               color: theme.palette.text.primary
             },
             '& .popup_tabs-header-label': {
-              color: theme.palette.text.disabled,
+              'color': theme.palette.text.disabled,
               '&.popup_tabs-header-label-active': {
                 color: theme.palette.text.primary
               }
             }
           }}
-          ref={popover.current}
+          ref={popover}
         >
           {gradient ? (
             <ReactGPicker
               value={color}
               debounce={false}
               onChange={onChange}
-              format="rgb"
+              format='rgb'
               gradient={true}
               solid={false}
               showAlpha={false}
